@@ -79,6 +79,44 @@ test_queries = [
 
 ---
 
+### Used Dataset 
+Here are the direct links to the official repositories and databases for the datasets and resources you listed:
+
+**CodeXGLUE Defect Detection**
+
+* **Link:** [github.com/microsoft/CodeXGLUE/.../Defect-detection](https://github.com/microsoft/CodeXGLUE/tree/main/Code-Code/Defect-detection)
+* **Details:** Hosted in Microsoft's official CodeXGLUE repository, this specific dataset (based on the Devign framework) contains C source code used to train models to identify security defects like resource leaks and use-after-free vulnerabilities.
+
+**OWASP Benchmark (Python)**
+
+* **Link:** [github.com/OWASP-Benchmark](https://github.com/OWASP-Benchmark)
+* **Details:** While the flagship OWASP Benchmark was originally built for Java, community ports and adaptations for Python exist under this GitHub organization to evaluate Python vulnerability detection tools.
+
+**OWASP Cheat Sheet Series**
+
+* **GitHub Link:** [github.com/OWASP/CheatSheetSeries](https://github.com/OWASP/CheatSheetSeries)
+* **Web Link:** [cheatsheetseries.owasp.org](https://cheatsheetseries.owasp.org/)
+* **Details:** While this is a collection of application security guides rather than a code dataset, the raw Markdown files for the entire series are hosted openly on this GitHub repository.
+
+**"Later Sources"**
+
+* **Details:** This is **not a standalone dataset**. Because you are pulling from a list of security datasets, it is highly likely that you copied this from a table in a research paper or systematic review. In literature reviews, "Later Sources" is a common categorical header used to describe datasets or studies found *after* the original search protocol was conducted.
+
+**OWASP Benchmark (Java)**
+
+* **Link:** [github.com/OWASP/Benchmark](https://www.google.com/search?q=https://github.com/OWASP/Benchmark)
+* **Details:** The official, flagship OWASP test suite. It is a fully runnable open-source Java web application designed to evaluate the speed, coverage, and accuracy of automated vulnerability detection tools.
+
+**NIST Juliet Test Suite for Java (v1.3)**
+
+* **Link:** [samate.nist.gov/SARD/test-suites/111](https://www.google.com/search?q=https://samate.nist.gov/SARD/test-suites/111)
+* **Details:** Hosted by the NIST Software Assurance Reference Dataset (SARD) project, this contains nearly 29,000 synthetic Java programs with known, documented flaws mapped to specific Common Weakness Enumerations (CWEs).
+
+**NIST Juliet Test Suite for C/C++ (v1.3)**
+
+* **Link:** [samate.nist.gov/SARD/test-suites/112](https://samate.nist.gov/SARD/test-suites/112)
+* **Details:** Also hosted on NIST SARD, this is the C/C++ equivalent containing thousands of test cases with intentional vulnerabilities (like buffer overflows) alongside fixed versions of the code to test tool discrimination.
+
 ## 3. What's Left / In Progress
 
 | Area | Gap | Planned Next Step |
