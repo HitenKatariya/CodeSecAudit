@@ -20,6 +20,10 @@ CodeSecAudit-RAG addresses this in two parts:
 
 ---
 
+- Dataset: https://huggingface.co/datasets/hitenvk22/CodeSecAudit-RAG-Shuffled
+- Notebook: https://www.kaggle.com/code/hitenkatariya/codesecaudit-rag
+
+
 ## 2. What's Done
 
 ### 2.1 Dataset Engineering
@@ -284,7 +288,3 @@ CodeSecAudit-RAG/
 
 ---
 
-## 6. Links
-
-- Dataset: https://huggingface.co/datasets/hitenvk22/CodeSecAudit-RAG-Shuffled
-- Notebook: https://www.kaggle.com/code/hitenkatariya/codesecaudit-rag
