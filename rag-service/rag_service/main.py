@@ -47,18 +47,29 @@ def _verify_key(request: Request) -> None:
 @app.on_event("startup")
 def startup():
     build_on_start = os.getenv("RAG_BUILD_ON_START", "true").lower() in ("1", "true", "yes")
-    if build_on_start:
-        logger.info("RAG_BUILD_ON_START=true — loading corpus and building index")
-        try:
-            n = index.load_corpus()
-            logger.info("Loaded %d chunks from dataset", n)
-            index.build_index()
-            logger.info("Index built successfully (%d chunks, %d embeddings)",
-                        index.total_chunks, index.embedding_count)
-        except Exception as e:
-            logger.error("Failed to build index on startup: %s", e)
-    else:
+    if not build_on_start:
         logger.info("RAG_BUILD_ON_START=false — index not loaded")
+        return
+    # Build in background: embedding 2833 chunks takes minutes and must not
+    # block startup, or hosts (Render) time out the port scan and kill us.
+    # /health reports index_loaded=false until ready; /rag/search returns [].
+    import threading
+
+    thread = threading.Thread(target=_build_index_background, daemon=True)
+    thread.start()
+    logger.info("Index build started in background thread")
+
+
+def _build_index_background():
+    logger.info("RAG_BUILD_ON_START=true — loading corpus and building index")
+    try:
+        n = index.load_corpus()
+        logger.info("Loaded %d chunks from dataset", n)
+        index.build_index()
+        logger.info("Index built successfully (%d chunks, %d embeddings)",
+                    index.total_chunks, index.embedding_count)
+    except Exception as e:
+        logger.error("Failed to build index in background: %s", e)
 
 
 @app.get("/")
