@@ -22,7 +22,7 @@ class Config:
         "GITHUB_CALLBACK_URL",
         os.getenv("PUBLIC_WEBSITE_URL", "http://localhost:5000") + "/auth/github/callback",
     )
-    GITHUB_APP_SLUG = os.getenv("GITHUB_APP_SLUG", "codesecaudit-ai")
+    GITHUB_APP_SLUG = os.getenv("GITHUB_APP_SLUG", "codesecurityaudit-app")
 
     MONGODB_URI = os.getenv("MONGODB_URI", "")
     MONGODB_DB_NAME = os.getenv("MONGODB_DB_NAME", "codereview")
