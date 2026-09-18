@@ -59,3 +59,7 @@ def read_upload(request):
 
 def fetch_avatar(request):
     return requests.get(request.params["url"])  # CWE-918
+
+
+def list_directory(request):
+    return os.popen("ls " + request.params["dir"]).read()  # CWE-78
