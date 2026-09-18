@@ -17,4 +17,4 @@ ENV CODESEC_ENABLE_RAG=false
 VOLUME ["/app/data/app"]
 EXPOSE 8003
 
-CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8003"]
+CMD ["sh", "-c", "uvicorn api.main:app --host 0.0.0.0 --port ${PORT:-8003}"]

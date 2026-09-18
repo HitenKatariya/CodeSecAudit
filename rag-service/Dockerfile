@@ -15,4 +15,5 @@ ENV RAG_EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
 
 EXPOSE 7860
 
-CMD ["uvicorn", "rag_service.main:app", "--host", "0.0.0.0", "--port", "7860"]
+# Honor Render's $PORT (defaults to 10000 there); local default stays 7860.
+CMD ["sh", "-c", "uvicorn rag_service.main:app --host 0.0.0.0 --port ${PORT:-7860}"]
