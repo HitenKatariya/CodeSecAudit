@@ -5,6 +5,14 @@
 - Dataset (HF): [`hitenvk22/CodeSecAudit-RAG-Shuffled`](https://huggingface.co/datasets/hitenvk22/CodeSecAudit-RAG-Shuffled)
 - Prototype notebook (Kaggle): [`CodeSecAudit-RAG`](https://www.kaggle.com/code/hitenkatariya/codesecaudit-rag)
 
+## Live Deployment
+
+| Service | URL |
+|---|---|
+| Website | [codesecaudit.vercel.app](https://codesecaudit.vercel.app) |
+| Backend API (docs) | [codesecaudit-backend.onrender.com/docs](https://codesecaudit-backend.onrender.com/docs) |
+| RAG Service | [codesec-rag-service.onrender.com](https://codesec-rag-service.onrender.com/) |
+
 > **Status:** Dataset engineering + RAG retrieval prototype complete. Classification/generation layer and evaluation are in progress — see [What's Left](#whats-left--in-progress).
 
 ---
