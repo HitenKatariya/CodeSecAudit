@@ -14,4 +14,5 @@ COPY . ./website/
 
 EXPOSE 10000
 
-CMD ["gunicorn", "website.app:app", "--bind", "0.0.0.0:10000"]
+# Honor Render's $PORT (defaults to 10000 there too).
+CMD ["sh", "-c", "gunicorn website.app:app --bind 0.0.0.0:${PORT:-10000} --workers 2 --timeout 120"]
