@@ -7,12 +7,17 @@
 
 ## Live Deployment
 
-| Service | URL |
-|---|---|
-| Website | [codesecaudit.vercel.app](https://codesecaudit.vercel.app) |
-| Backend API (docs) | [codesecaudit-backend.onrender.com/docs](https://codesecaudit-backend.onrender.com/docs) |
-| RAG Service | [codesec-rag-service.onrender.com](https://codesec-rag-service.onrender.com/) |
-| GitHub App | [CodeSecurityAudit App](https://github.com/apps/codesecurityaudit-app) |
+| # | Service | Link |
+|---|---|---|
+| 1 | Website (live app) | [codesecaudit.vercel.app](https://codesecaudit.vercel.app) |
+| 2 | Backend API — Swagger docs | [codesecaudit-backend.onrender.com/docs](https://codesecaudit-backend.onrender.com/docs) |
+| 3 | Backend API — health check | [codesecaudit-backend.onrender.com/health](https://codesecaudit-backend.onrender.com/health) |
+| 4 | RAG Service — search UI/API | [codesec-rag-service.onrender.com](https://codesec-rag-service.onrender.com/) |
+| 5 | RAG Service — health check | [codesec-rag-service.onrender.com/health](https://codesec-rag-service.onrender.com/health) |
+| 6 | GitHub App — install page | [github.com/apps/codesecurityaudit-app](https://github.com/apps/codesecurityaudit-app) |
+| 7 | Source code (GitHub) | [hitenkatariya/CodeSecAudit](https://github.com/hitenkatariya/CodeSecAudit) |
+| 8 | Dataset (Hugging Face) | [hitenvk22/CodeSecAudit-RAG-Shuffled](https://huggingface.co/datasets/hitenvk22/CodeSecAudit-RAG-Shuffled) |
+| 9 | Prototype notebook (Kaggle) | [CodeSecAudit-RAG](https://www.kaggle.com/code/hitenkatariya/codesecaudit-rag) |
 
 ## System Overview (as deployed)
 
