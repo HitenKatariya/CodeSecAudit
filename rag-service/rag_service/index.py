@@ -35,7 +35,11 @@ class OnnxEmbedder:
         model_path = hf_hub_download(repo_id=onnx_repo, filename=onnx_file)
 
         opts = ort.SessionOptions()
-        opts.intra_op_num_threads = max(1, (os.cpu_count() or 2) // 2)
+        opts.intra_op_num_threads = 1
+        opts.inter_op_num_threads = 1
+        # Default arena (kNextPowerOfTwo) grabs hundreds of MB on first run and
+        # OOMs 512 MB containers — allocate only what's requested instead.
+        opts.add_session_config_entry("arena_extend_strategy", "kSameAsRequested")
         opts.log_severity_level = 3
         self.session = ort.InferenceSession(
             model_path, sess_options=opts, providers=["CPUExecutionProvider"]
@@ -47,7 +51,7 @@ class OnnxEmbedder:
         self.tokenizer.enable_padding()
         logger.info("ONNX embedder ready (inputs=%s)", self._input_names)
 
-    def encode(self, texts, batch_size: int = 64) -> np.ndarray:
+    def encode(self, texts, batch_size: int = 16) -> np.ndarray:
         if isinstance(texts, str):
             texts = [texts]
         outs = []
