@@ -4,11 +4,21 @@
 <section class="auth-section">
     <div class="auth-card">
         <h1>Verify Your Email</h1>
+        {% if email %}
         <p class="auth-desc">We sent a verification code to <strong>{{ email }}</strong>.</p>
+        {% else %}
+        <p class="auth-desc">GitHub didn't share an email address. Enter one below to receive your verification code.</p>
+        {% endif %}
 
         <div id="otp-status"></div>
 
         <form id="otp-form" class="otp-form" onsubmit="return sendOtp(event)">
+            {% if not email %}
+            <div class="form-group">
+                <label for="email">Email address</label>
+                <input type="email" id="email" name="email" placeholder="you@example.com" autocomplete="email" required>
+            </div>
+            {% endif %}
             <button type="submit" class="btn btn-primary" id="send-otp-btn">Send Verification Code</button>
         </form>
 
@@ -35,7 +45,7 @@ async function sendOtp(e) {
     btn.textContent = 'Sending...';
 
     try {
-        const resp = await fetch('/otp/send', { method: 'POST' });
+        const resp = await fetch('/otp/send', { method: 'POST', body: new FormData(e.target) });
         const data = await resp.json();
         if (data.success) {
             otpSent = true;

@@ -1,4 +1,5 @@
 import logging
+import re
 from datetime import datetime, timezone
 from functools import wraps
 
@@ -45,9 +46,20 @@ def create_app(config_class=Config):
         if not user:
             return {"error": "Not logged in"}, 401
 
-        email = user.get("email", "")
-        if not email:
-            return {"error": "No email address on file"}, 400
+        # GitHub may not share an email (e.g. App lacks the Email permission),
+        # so accept a manually entered address as fallback.
+        email = (request.form.get("email") or user.get("email") or "").strip()
+        if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
+            return {"error": "Enter a valid email address"}, 400
+
+        if email != user.get("email"):
+            db, _ = _get_db()
+            db.users_collection.update_one(
+                {"github_id": user["github_id"]}, {"$set": {"email": email}}
+            )
+            updated = dict(user)
+            updated["email"] = email
+            session["user"] = updated
 
         try:
             send_otp(user["github_id"], email)
@@ -70,7 +82,9 @@ def create_app(config_class=Config):
 
         try:
             verify_otp(user["github_id"], otp)
-            session["user"]["email_verified"] = True
+            updated = dict(session.get("user", {}))
+            updated["email_verified"] = True
+            session["user"] = updated
             try:
                 send_welcome_email(user)
             except Exception:
