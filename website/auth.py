@@ -69,11 +69,7 @@ def github_callback():
         "username": user.get("username", ""),
         "email": user.get("email", ""),
         "avatar_url": user.get("avatar_url", ""),
-        "email_verified": user.get("email_verified", False),
     }
-
-    if not user.get("email_verified"):
-        return redirect(url_for("verify_email_page"))
 
     return redirect(url_for("dashboard"))
 
