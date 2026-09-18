@@ -12,8 +12,29 @@
 | Website | [codesecaudit.vercel.app](https://codesecaudit.vercel.app) |
 | Backend API (docs) | [codesecaudit-backend.onrender.com/docs](https://codesecaudit-backend.onrender.com/docs) |
 | RAG Service | [codesec-rag-service.onrender.com](https://codesec-rag-service.onrender.com/) |
+| GitHub App | [CodeSecurityAudit App](https://github.com/apps/codesecurityaudit-app) |
 
-> **Status:** Dataset engineering + RAG retrieval prototype complete. Classification/generation layer and evaluation are in progress — see [What's Left](#whats-left--in-progress).
+## System Overview (as deployed)
+
+Three independent services, wired over HTTP (CWE ID is the join key):
+
+| Service | Folder | Role | Live |
+|---|---|---|---|
+| Website (Flask) | `website/` | Landing, GitHub OAuth login, email OTP, usage dashboard, review history | [codesecaudit.vercel.app](https://codesecaudit.vercel.app) |
+| Backend (FastAPI) | `backend/` | Rule-engine review (`review_engine/`), SQLite history (`review_store/`), GitHub PR webhook bot | [codesecaudit-backend.onrender.com](https://codesecaudit-backend.onrender.com/) |
+| RAG Service (FastAPI) | `rag-service/` | OWASP cheat-sheet semantic search over 2,833 chunks (ONNX MiniLM, no torch) | [codesec-rag-service.onrender.com](https://codesec-rag-service.onrender.com/) |
+
+### Backend API (Swagger)
+
+![Backend Swagger UI](assets/06-swagger.png)
+*Fig 6 — Live backend: `GET /, /health, /reviews, /stats`, `POST /review, /review/code`, `POST /webhook/github`. Every review returns risk score (0–100), verdict (`APPROVE`/`WARNING`/`REQUEST_CHANGES`), CWE-tagged issues and suggested fixes.*
+
+### GitHub App (PR bot)
+
+![GitHub App listing](assets/07-github-app.png)
+*Fig 7 — Public [CodeSecurityAudit App](https://github.com/apps/codesecurityaudit-app): install it on a repo and every pull request gets an automated security review — summary comment with risk score plus inline CWE findings on the exact risky lines.*
+
+> **Status:** Dataset + RAG retrieval + review engine + GitHub PR bot **live in production** (see links above). Supervised CWE classification and LLM-grounded generation remain future work — see [What's Left](#whats-left--in-progress).
 
 ---
 
@@ -137,8 +158,8 @@ Here are the direct links to the official repositories and databases for the dat
 | Retrieval evaluation | Only qualitative (eyeballing top-k snippets) | Add quantitative metrics: Precision@k, Recall@k, MRR against a held-out labeled query set |
 | Classification model | Not yet trained | Fine-tune a code-vulnerability classifier (e.g. CodeBERT/GraphCodeBERT) on the labeled subset, output CWE + severity |
 | Generation layer | Retrieval-only right now | Add an LLM generation step that takes (flagged code + retrieved cheat-sheet chunks) → produces a plain-English explanation + fix suggestion, grounded in citations |
-| End-to-end pipeline | Dataset and RAG corpus are still separate notebooks | Wire classifier output → RAG query → generation into one pipeline function |
-| Serving | Notebook-only prototype | Wrap as an API (FastAPI) + minimal UI for a reviewer/demo-able tool |
+| End-to-end pipeline | ~~Separate notebooks~~ → **Done**: `review_engine/pipeline.py` (rules → RAG enrich → risk/verdict) + `POST /review/code` with SQLite history | Add LLM generation + classifier on top |
+| Serving | ~~Notebook-only prototype~~ → **Done**: backend on Render, website on Vercel, RAG on Render (ONNX build fits 512 MB free tier) | Harden (Postgres for history, HF PRO Space as RAG alternative) |
 | Testing | No formal test suite | Add unit tests for chunking, retrieval, and schema validation |
 | Docs | This README is the first pass | Add data card / model card once classifier + generation land |
 
@@ -214,8 +235,8 @@ flowchart TD
     C --> D[CWE ID Extractor<br/>regex + manual mapping]
     D --> E[Metadata Enrichment<br/>source_file, title, section_title]
     E --> F[Chunking<br/>~512 tokens per chunk]
-    F --> G[Embedding Model<br/>sentence-transformers]
-    G --> H[(Vector Store<br/>FAISS / Chroma)]
+    F --> G[Embedding Model<br/>ONNX MiniLM int8]
+    G --> H[(In-memory index<br/>numpy cosine)]
     
     style A fill:#e1f5fe
     style H fill:#f3e5f5
@@ -273,25 +294,42 @@ sequenceDiagram
 
 ---
 
-## 5. Repo / Asset Structure (suggested)
+## 5. Repo Structure (actual)
 
 ```
-CodeSecAudit-RAG/
+CodeSecAudit/
 ├── README.md
+├── .env / .env.example          # single env file for all services (never committed)
+├── docker-compose.yml           # backend + rag-service + website + mongo
+├── Dockerfile + start-all.sh    # all-in-one single-container image
+├── vercel.json + api/index.py   # website serverless entrypoint
+├── render.yaml                  # Render blueprint (backend + rag-service)
+├── backend/                     # FastAPI review API :8003
+│   ├── api/main.py              # /, /health, /review, /review/code, /reviews, /stats, /webhook/github
+│   ├── review_engine/           # critic (regex rules), pipeline, fixer, risk_score, remote_rag, github_app
+│   ├── review_store/            # SQLite review history
+│   ├── scripts/                 # CLI, dataset pipeline, eval, deploy helpers
+│   ├── eval/golden_cases.jsonl  # engine regression cases
+│   └── Dockerfile | requirements.txt | README.md
+├── rag-service/                 # FastAPI retrieval API :7860
+│   ├── rag_service/             # main.py, index.py (ONNX), schemas.py
+│   └── Dockerfile | requirements.txt | README.md
+├── website/                     # Flask SaaS site :5000
+│   ├── app.py, auth.py, otp.py, email_service.py, db.py, api_client.py, ...
+│   ├── templates/ | static/
+│   └── Dockerfile | requirements.txt | README.md
 ├── assets/
 │   ├── 01-cwe-distribution.png
 │   ├── 02-owasp-category-distribution.png
 │   ├── 03-rag-retrieval-ssrf-fileupload.png
 │   ├── 04-rag-test-queries.png
-│   └── 05-rag-corpus-coverage.png
-├── data/
-│   └── (dataset build notebooks — normalization, EDA)
-├── rag/
-│   └── (corpus chunking, embedding, search_rag prototype)
+│   ├── 05-rag-corpus-coverage.png
+│   ├── 06-swagger.png
+│   └── 07-github-app.png
 ├── notebooks/
-│   └── CodeSecAudit-RAG.ipynb   # current Kaggle prototype
+│   └── codesecaudit-rag.ipynb   # research prototype (EDA + RAG experiments)
 └── docs/
-    └── architecture.md
+    └── architecture.md (+ 20 topic docs)
 ```
 
 ---
