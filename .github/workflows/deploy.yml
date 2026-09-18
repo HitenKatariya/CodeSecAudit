@@ -3,6 +3,11 @@ name: CI + Force Deploy
 on:
   push:
     branches: [main]
+    paths:
+      - 'backend/**'
+      - 'rag-service/**'
+      - 'render.yaml'
+      - '.github/workflows/deploy.yml'
   workflow_dispatch:
 
 jobs:
