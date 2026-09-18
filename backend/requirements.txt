@@ -1,0 +1,10 @@
+fastapi>=0.100.0
+uvicorn[standard]>=0.20.0
+pydantic>=2.0.0
+pyjwt>=2.0.0
+cryptography>=3.4.0
+requests>=2.31.0
+# Local RAG (ChromaDB) — optional, needed only for CODESEC_RAG_MODE=local.
+# Install with: pip install -r requirements-rag.txt  (or enable in Docker build)
+# chromadb>=0.5.0
+# sentence-transformers>=2.2.0

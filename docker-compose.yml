@@ -1,0 +1,72 @@
+services:
+  backend:
+    build: ./backend
+    image: codesec-backend:latest
+    container_name: codesec-backend
+    env_file: .env
+    ports:
+      - "8003:8003"
+    volumes:
+      - codesec_data:/app/data/app
+    environment:
+      - CODESEC_DB_PATH=/app/data/app/reviews.db
+      - CODESEC_RAG_MODE=remote
+      - CODESEC_RAG_SERVICE_URL=http://rag-service:7860
+    depends_on:
+      rag-service:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  rag-service:
+    build: ./rag-service
+    image: codesec-rag-service:latest
+    container_name: codesec-rag-service
+    env_file: .env
+    ports:
+      - "7860:7860"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7860/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  website:
+    build: ./website
+    image: codesec-website:latest
+    container_name: codesec-website
+    env_file: .env
+    ports:
+      - "5000:10000"
+    environment:
+      - PORT=10000
+      - CODESEC_API_URL=http://backend:8003
+      - MONGODB_URI=mongodb://mongo:27017/codereview
+    depends_on:
+      backend:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+
+  mongo:
+    image: mongo:7
+    container_name: codesec-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+volumes:
+  codesec_data:
+  mongo_data:

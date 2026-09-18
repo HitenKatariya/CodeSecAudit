@@ -1,0 +1,18 @@
+# Vercel uploads only the website ("frontend").
+# Backend, RAG, research and Docker files deploy elsewhere (Render/HF/compose).
+.env
+backend/
+rag-service/
+notebooks/
+docs/
+assets/
+scripts/
+Dockerfile
+docker-compose.yml
+render.yaml
+start-all.sh
+pyproject.toml
+.git/
+dist/
+release/
+data/
