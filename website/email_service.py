@@ -1,7 +1,43 @@
 import logging
+import os
 from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
+
+
+def _send_email(to_email: str, subject: str, html_body: str) -> tuple[bool, str]:
+    """Send one email. Returns (success, reference).
+
+    Gmail SMTP first (GMAIL_USER + GMAIL_PASS as a Google App Password),
+    Resend HTTP API as fallback (RESEND_API_KEY).
+    """
+    gmail_user = os.getenv("GMAIL_USER", "")
+    gmail_pass = os.getenv("GMAIL_PASS", "")
+    if gmail_user and gmail_pass:
+        try:
+            import smtplib
+            from email.mime.text import MIMEText
+
+            msg = MIMEText(html_body, "html")
+            msg["Subject"] = subject
+            msg["From"] = f"CodeSecAudit AI <{gmail_user}>"
+            msg["To"] = to_email
+            with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=15) as smtp:
+                smtp.login(gmail_user, gmail_pass)
+                smtp.send_message(msg)
+            return True, "gmail-smtp"
+        except Exception as e:
+            logger.error(f"Gmail SMTP error: {e}")
+
+    result = _resend_request("emails", {
+        "from": os.getenv("EMAIL_FROM", "CodeSecAudit AI <onboarding@resend.dev>"),
+        "to": [to_email],
+        "subject": subject,
+        "html": html_body,
+    })
+    if result is not None:
+        return True, result.get("id", "resend")
+    return False, ""
 
 
 def _resend_request(path: str, payload: dict) -> dict | None:
@@ -49,8 +85,6 @@ def _log_event(user_id: str, email: str, template: str, subject: str, status: st
 
 
 def send_otp_email(email: str, otp: str) -> bool:
-    from website.config import Config
-
     subject = "Your CodeSecAudit AI verification code"
     body = f"""<p>Your verification code is:</p>
 <h2 style="letter-spacing: 4px; font-size: 28px; color: #6366f1;">{otp}</h2>
@@ -58,20 +92,12 @@ def send_otp_email(email: str, otp: str) -> bool:
 <p>If you did not request this, you can safely ignore this email.</p>
 <p>— CodeSecAudit AI Team</p>"""
 
-    result = _resend_request("emails", {
-        "from": Config.EMAIL_FROM,
-        "to": [email],
-        "subject": subject,
-        "html": body,
-    })
-    success = result is not None
-    _log_event("", email, "otp", subject, "sent" if success else "failed", (result or {}).get("id", ""))
+    success, ref = _send_email(email, subject, body)
+    _log_event("", email, "otp", subject, "sent" if success else "failed", ref)
     return success
 
 
 def send_welcome_email(user: dict) -> bool:
-    from website.config import Config
-
     username = user.get("username", "there")
     subject = "Welcome to CodeSecAudit AI"
     body = f"""<p>Hi {username},</p>
@@ -88,20 +114,14 @@ def send_welcome_email(user: dict) -> bool:
 <p>Next step: <a href="https://github.com/apps/codesecurityaudit-app/installations/new">Install the GitHub App</a> on your repository to get started.</p>
 <p>— CodeSecAudit AI Team</p>"""
 
-    result = _resend_request("emails", {
-        "from": Config.EMAIL_FROM,
-        "to": [user.get("email", "")],
-        "subject": subject,
-        "html": body,
-    })
-    success = result is not None
+    success, ref = _send_email(user.get("email", ""), subject, body)
     _log_event(
         str(user.get("github_id", "")),
         user.get("email", ""),
         "welcome",
         subject,
         "sent" if success else "failed",
-        (result or {}).get("id", ""),
+        ref,
     )
     return success
 
@@ -121,19 +141,13 @@ def send_limit_reached_email(user: dict) -> bool:
 <p><a href="mailto:{Config.OWNER_CONTACT_EMAIL}?subject=Request more CodeSecAudit AI PR reviews">{Config.OWNER_CONTACT_EMAIL}</a></p>
 <p>— CodeSecAudit AI Team</p>"""
 
-    result = _resend_request("emails", {
-        "from": Config.EMAIL_FROM,
-        "to": [user.get("email", "")],
-        "subject": subject,
-        "html": body,
-    })
-    success = result is not None
+    success, ref = _send_email(user.get("email", ""), subject, body)
     _log_event(
         str(user.get("github_id", "")),
         user.get("email", ""),
         "limit_reached",
         subject,
         "sent" if success else "failed",
-        (result or {}).get("id", ""),
+        ref,
     )
     return success
