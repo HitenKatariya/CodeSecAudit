@@ -12,6 +12,9 @@ ENV RAG_BUILD_ON_START=true
 ENV RAG_DATASET_REPO=hitenvk22/CodeSecAudit-RAG-Shuffled
 ENV RAG_CORPUS_FILE=rag/rag_corpus.jsonl.gz
 ENV RAG_EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
+ENV RAG_ONNX_REPO=Xenova/all-MiniLM-L6-v2
+ENV RAG_ONNX_FILE=onnx/model_quantized.onnx
+ENV TOKENIZERS_PARALLELISM=false
 
 EXPOSE 7860
 

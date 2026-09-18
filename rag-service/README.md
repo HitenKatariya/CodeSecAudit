@@ -3,6 +3,10 @@
 Standalone FastAPI service. Downloads HF corpus, embeds in-memory, serves semantic search.
 No imports from `backend/` or `website/` — HTTP only.
 
+**Runtime:** ONNX Runtime + int8-quantized MiniLM (`Xenova/all-MiniLM-L6-v2`), ~200 MB RAM —
+fits Render's 512 MB free tier. (PyTorch/`sentence-transformers` was dropped for this reason;
+vectors are mean-pooled + normalized, cosine-compatible with the old backend.)
+
 ## Layout
 
 ```
