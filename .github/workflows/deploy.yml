@@ -1,0 +1,30 @@
+name: CI + Force Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install engine deps
+        run: pip install pydantic
+      - name: Engine regression (golden cases)
+        run: PYTHONPATH=backend python backend/scripts/evaluate_reviewer.py
+      - name: Compile check
+        run: python -m compileall backend rag-service/rag_service website
+
+  deploy-render:
+    needs: checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Force deploy rag-service
+        run: curl -sf -X POST "${{ secrets.RENDER_DEPLOY_HOOK_RAG }}"
+      - name: Force deploy backend
+        run: curl -sf -X POST "${{ secrets.RENDER_DEPLOY_HOOK_BACKEND }}"
