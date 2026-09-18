@@ -60,7 +60,7 @@ services:
       - key: GITHUB_CALLBACK_URL
         value: https://codesec-website.onrender.com/auth/github/callback
       - key: GITHUB_APP_SLUG
-        value: codesecaudit-ai
+        value: codesecurityaudit-app
       - key: SESSION_SECRET
         sync: false
       - key: MONGODB_URI

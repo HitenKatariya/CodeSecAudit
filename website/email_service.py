@@ -85,7 +85,7 @@ def send_welcome_email(user: dict) -> bool:
   <li>Risk scoring</li>
   <li>RAG-guided secure coding suggestions</li>
 </ul>
-<p>Next step: <a href="https://github.com/apps/codesecaudit-ai/installations/new">Install the GitHub App</a> on your repository to get started.</p>
+<p>Next step: <a href="https://github.com/apps/codesecurityaudit-app/installations/new">Install the GitHub App</a> on your repository to get started.</p>
 <p>— CodeSecAudit AI Team</p>"""
 
     result = _resend_request("emails", {

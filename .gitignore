@@ -28,3 +28,4 @@ secrets/
 *.pem
 
 .vercel
+.env*
