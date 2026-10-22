@@ -4,10 +4,10 @@
 
 | Service | URL | Status |
 |---|---|---|
-| RAG Service | https://hitenvk22-codesec-rag-service.hf.space | **Live** |
-| GitHub Repo | https://github.com/hitenkatariya/CodeSecAudit | Active |
-| Hugging Face Dataset | https://huggingface.co/datasets/hitenvk22/CodeSecAudit-RAG-Shuffled | Published |
-| Deploy PR | https://github.com/hitenkatariya/CodeSecAudit/pull/1 | Merged |
+| RAG Service | https://OMCHOKSI108-codereview-agent.hf.space | **Live** |
+| GitHub Repo | https://github.com/OMCHOKSI108/codesec-audit-dataset | Active |
+| Hugging Face Dataset | https://huggingface.co/datasets/OMCHOKSI108/CodeSecAudit-RAG | Published |
+| Deploy PR | https://github.com/OMCHOKSI108/codesec-audit-dataset/pull/1 | Merged |
 
 ## RAG Service Verification
 
@@ -46,7 +46,7 @@ POST /rag/search {"query": "SQL injection", "top_k": 2}
 
 ```text
 CODESEC_RAG_MODE=remote
-CODESEC_RAG_SERVICE_URL=https://hitenvk22-codesec-rag-service.hf.space
+CODESEC_RAG_SERVICE_URL=https://OMCHOKSI108-codereview-agent.hf.space
 
 Result: rag_used=True, rag_error=None, verdict=WARNING, risk_score=35
 ```

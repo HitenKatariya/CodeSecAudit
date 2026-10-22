@@ -1,77 +1,178 @@
+# Render Blueprint for the CodeSecurityAuditAgent stack - one Blueprint
+# deploys all four pieces together: codesec-client (frontend), codesec-main
+# (backend + review worker), codesec-rag (RAG microservice), plus Postgres
+# and Redis. main-server and rag-server deploy as native Render "python"
+# services (pip install + a start command - no Dockerfile/image build);
+# codesec-client still builds from its Dockerfile. NEXT_PUBLIC_APP_URL and
+# RAG_SERVICE_URL/MAIN_SERVER_URL are wired automatically via fromService -
+# Render resolves these across services in one Blueprint apply, no manual
+# URL copying between dashboards. (client/.env.example still documents a
+# Vercel deploy as an alternative, if you'd rather split it off later.)
+#
+# This layout targets Render's free/entry plans:
+#   * The review worker runs inside the main-server process because free plans
+#     do not include background workers (RUN_WORKER_INLINE=true).
+#   * Qdrant and the embedding model are external services.
+#
+# After the first deploy, fill in the `sync: false` values in the Render
+# dashboard. See docs/render-deploy.md for the full checklist.
+
 services:
   - type: web
-    name: codesec-backend
-    env: docker
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
+    name: codesec-main
+    runtime: python
+    plan: free
+    region: oregon
+    rootDir: main-server
+    buildCommand: pip install .
+    # Free Render web services do not support preDeployCommand, so migrations
+    # run as part of the start command. Alembic is idempotent.
+    startCommand: 'alembic upgrade head && exec python -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}'
+    healthCheckPath: /health/live
+    autoDeploy: true
     envVars:
-      - key: PORT
-        value: "8003"
-      - key: CODESEC_ENABLE_RAG
+      - key: PYTHON_VERSION
+        value: "3.12.8"
+      - key: APP_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: codesec-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: codesec-redis
+          type: keyvalue
+          property: connectionString
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: RAG_SERVICE_URL
+        fromService:
+          name: codesec-rag
+          type: web
+          property: hostport
+      - key: RAG_SERVICE_TOKEN
+        sync: false
+      # Public URL of codesec-client, resolved automatically within this
+      # Blueprint - app/core/config.py's _ensure_public_scheme validator
+      # adds https:// to the bare hostport Render returns here.
+      - key: NEXT_PUBLIC_APP_URL
+        fromService:
+          name: codesec-client
+          type: web
+          property: hostport
+      # Leave unset to auto-derive from NEXT_PUBLIC_APP_URL + /api/auth/github/callback
+      # (app/core/config.py:github_oauth_redirect_uri) - the client's proxy
+      # route, so the session cookie lands on the client origin. Only set
+      # this explicitly if the client ever moves off this Blueprint (e.g. Vercel).
+      - key: OAUTH_REDIRECT_URI
+        sync: false
+      - key: RUN_WORKER_INLINE
         value: "true"
-      - key: CODESEC_RAG_MODE
-        value: remote
-      - key: CODESEC_RAG_SERVICE_URL
-        value: https://codesec-rag-service.onrender.com
-      - key: CODESEC_DEFAULT_TOP_K
-        value: "3"
-      - key: CODESEC_MAX_FILES_PER_PR
-        value: "30"
-      - key: CODESEC_MAX_FILE_SIZE_KB
-        value: "200"
-      - key: CODESEC_MAX_INLINE_COMMENTS
-        value: "10"
-      - key: CODESEC_BLOCK_ON_REQUEST_CHANGES
-        value: "false"
-      - key: OWNER_CONTACT_EMAIL
-        value: omchoksi108@gmail.com
-
-  - type: web
-    name: codesec-rag-service
-    env: docker
-    dockerfilePath: ./rag-service/Dockerfile
-    dockerContext: ./rag-service
-    envVars:
-      - key: PORT
-        value: "7860"
-      - key: RAG_BUILD_ON_START
-        value: "true"
-      - key: RAG_DATASET_REPO
-        value: hitenvk22/CodeSecAudit-RAG-Shuffled
-      - key: RAG_CORPUS_FILE
-        value: rag/rag_corpus.jsonl.gz
-      - key: RAG_EMBEDDING_MODEL
-        value: sentence-transformers/all-MiniLM-L6-v2
-
-  - type: web
-    name: codesec-website
-    env: docker
-    dockerfilePath: ./website/Dockerfile
-    dockerContext: ./website
-    envVars:
-      - key: PUBLIC_WEBSITE_URL
-        value: https://codesec-website.onrender.com
-      - key: CODESEC_API_URL
-        value: https://codesec-backend.onrender.com
       - key: GITHUB_CLIENT_ID
         sync: false
       - key: GITHUB_CLIENT_SECRET
         sync: false
-      - key: GITHUB_CALLBACK_URL
-        value: https://codesec-website.onrender.com/auth/github/callback
-      - key: GITHUB_APP_SLUG
-        value: codesecurityaudit-app
-      - key: SESSION_SECRET
+      - key: GITHUB_APP_ID
         sync: false
-      - key: MONGODB_URI
+      - key: GITHUB_APP_PRIVATE_KEY
         sync: false
-      - key: MONGODB_DB_NAME
-        value: codereview
-      - key: RESEND_API_KEY
+      - key: GITHUB_WEBHOOK_SECRET
         sync: false
-      - key: EMAIL_FROM
+      # LLM review stage (pr_agent_client.py) - see
+      # docs/PR_AGENT_INTEGRATION_GUIDE.md section 5. Groq first (free),
+      # then NVIDIA NIM, then Hugging Face - retry_with_fallback_models()
+      # only advances to the next one on failure/rate-limit.
+      - key: PR_AGENT_REVIEW_ENABLED
+        value: "true"
+      - key: PR_AGENT_MODEL
+        value: groq/llama-3.3-70b-versatile
+      - key: PR_AGENT_FALLBACK_MODELS
+        value: nvidia_nim/meta/llama-3.1-70b-instruct,huggingface/meta-llama/Llama-3.1-8B-Instruct
+      - key: GROQ_API_KEY
         sync: false
-      - key: OWNER_CONTACT_EMAIL
-        value: omchoksi108@gmail.com
-      - key: FREE_PR_REVIEWS_PER_MONTH
-        value: "30"
+      - key: NVIDIA_NIM_API_KEY
+        sync: false
+      - key: HUGGINGFACE_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+
+  - type: web
+    name: codesec-rag
+    runtime: python
+    plan: free
+    region: oregon
+    rootDir: rag-server
+    buildCommand: pip install .
+    startCommand: 'exec python -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8010}'
+    healthCheckPath: /health/live
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.8"
+      - key: APP_ENV
+        value: production
+      - key: REDIS_URL
+        fromService:
+          name: codesec-redis
+          type: keyvalue
+          property: connectionString
+      - key: RAG_SERVICE_TOKEN
+        sync: false
+      # Qdrant Cloud cluster URL, e.g. https://xxxx.cloud.qdrant.io:6333
+      - key: QDRANT_URL
+        sync: false
+      - key: QDRANT_API_KEY
+        sync: false
+      # Any OpenAI-compatible /embeddings API. Using NVIDIA NIM here since you
+      # already have NVIDIA_NIM_API_KEY for the pr_agent fallback chain - this
+      # is a separate call path (rag-server, not main-server), same key works.
+      # EMBEDDING_SEND_INPUT_TYPE=true is required for this specific model;
+      # it's an asymmetric query/passage embedder, not a plain OpenAI one.
+      - key: EMBEDDING_API_BASE
+        value: https://integrate.api.nvidia.com/v1
+      - key: EMBEDDING_API_KEY
+        sync: false
+      - key: EMBEDDING_MODEL
+        value: nvidia/nv-embedqa-e5-v5
+      - key: EMBEDDING_DIM
+        value: "1024"
+      - key: EMBEDDING_SEND_INPUT_TYPE
+        value: "true"
+      # Use a fresh collection name whenever the embedding model changes.
+      - key: RAG_COLLECTION_NAME
+        value: secure_guidance_v1
+
+  - type: web
+    name: codesec-client
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./client/Dockerfile
+    dockerContext: ./client
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: MAIN_SERVER_URL
+        fromService:
+          name: codesec-main
+          type: web
+          property: hostport
+
+  # Render Key Value instances live in `services`, not `databases`.
+  # ipAllowList: [] keeps it private (internal connections only).
+  - type: keyvalue
+    name: codesec-redis
+    plan: free
+    region: oregon
+    ipAllowList: []
+
+databases:
+  - name: codesec-postgres
+    plan: free
+    databaseName: codesec
+    user: codesec
+    postgresMajorVersion: "16"

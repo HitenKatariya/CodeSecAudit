@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-line-limits:
+    name: Enforce 200-Line Limit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check Source Line Limits
+        run: python3 .github/scripts/check_source_line_limit.py
+
+  test-rag-server:
+    name: Test RAG Server
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -e "./rag-server[dev]"
+      - name: Run Pytest
+        run: |
+          cd rag-server
+          pytest tests
+
+  test-main-server:
+    name: Test Main Server
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -e "./main-server[dev]"
+      - name: Run Pytest
+        run: |
+          cd main-server
+          pytest tests
+
+  test-client:
+    name: Test Next.js Client
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Run Smoke Tests
+        run: |
+          cd client
+          node --test tests/smoke.test.js
+
+  validate-docker-compose:
+    name: Validate Docker Compose
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Compose File
+        run: docker compose config --quiet

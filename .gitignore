@@ -13,6 +13,7 @@ data/app/
 *.db
 *.sqlite
 
+pr_agent
 # data files (large, separate dataset repo)
 data/
 
@@ -21,11 +22,12 @@ dist/
 __pycache__/
 *.pyc
 *.pyo
+node_modules/
+.next/
+next-env.d.ts
+.pytest_cache/
 
 # Local secrets files
 .github-app-manifest.json
 secrets/
 *.pem
-
-.vercel
-.env*

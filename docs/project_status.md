@@ -13,7 +13,7 @@
 | Review History DB (SQLite) | **Done** | CRUD endpoints, pagination, stats |
 | Streamlit Dashboard | **Done** | Stats cards, charts, filters, review detail viewer |
 | Docker Compose | **Done** | 3-service stack, lightweight default, RAG optional |
-| RAG Service (HF Space) | **Deployed** | Live at https://hitenvk22-codesec-rag-service.hf.space |
+| RAG Service (HF Space) | **Deployed** | Live at https://OMCHOKSI108-codereview-agent.hf.space |
 | Remote RAG Client | **Done** | `search_remote_rag()`, `remote_rag_available()` in pipeline |
 | Deployment Scripts | **Done** | `prepare_hf_rag_space.py`, `deploy_hf_rag_space.py`, smoke tests |
 | Render / Railway Deployment | **Pending** | Not yet deployed |

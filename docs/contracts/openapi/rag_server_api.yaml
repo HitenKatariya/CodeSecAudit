@@ -1,0 +1,73 @@
+openapi: 3.1.0
+info:
+  title: CodeSecAudit RAG Server API
+  version: 0.1.0
+  description: Internal private microservice for OWASP vector search and embedding.
+paths:
+  /health/live:
+    get:
+      summary: Liveness probe
+      responses:
+        "200":
+          description: Service is running
+  /health/ready:
+    get:
+      summary: Readiness probe
+      responses:
+        "200":
+          description: Dependencies are ready
+        "503":
+          description: Qdrant or embedding model unavailable
+  /version:
+    get:
+      summary: Version information
+      responses:
+        "200":
+          description: Service and index version
+  /v1/search:
+    post:
+      summary: Semantic search for secure coding guidance
+      security:
+        - InternalServiceToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query]
+              properties:
+                query:
+                  type: string
+                top_k:
+                  type: integer
+                  default: 3
+                cwe_id:
+                  type: string
+      responses:
+        "200":
+          description: Search results
+        "401":
+          description: Missing or invalid internal token
+  /v1/index:
+    post:
+      summary: Start indexing approved corpus
+      security:
+        - InternalServiceToken: []
+      responses:
+        "202":
+          description: Indexing triggered
+  /v1/index/status:
+    get:
+      summary: Current index status and document counts
+      security:
+        - InternalServiceToken: []
+      responses:
+        "200":
+          description: Index status
+components:
+  securitySchemes:
+    InternalServiceToken:
+      type: apiKey
+      in: header
+      name: X-Internal-RAG-Token

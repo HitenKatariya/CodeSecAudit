@@ -1,0 +1,111 @@
+openapi: 3.1.0
+info:
+  title: CodeSecAudit Main Server API
+  version: 0.1.0
+  description: Core security-owning backend API for GitHub integrations, reviews, and logs.
+paths:
+  /health/live:
+    get:
+      summary: Process liveness probe
+      responses:
+        "200":
+          description: Process alive
+  /health/ready:
+    get:
+      summary: Service dependency readiness probe
+      responses:
+        "200":
+          description: Dependencies ready
+        "503":
+          description: Database or cache unavailable
+  /version:
+    get:
+      summary: Version and commit metadata
+      responses:
+        "200":
+          description: Version metadata
+  /v1/auth/github/start:
+    get:
+      summary: Begin GitHub OAuth with PKCE and secure state
+      responses:
+        "302":
+          description: Redirect to GitHub authorize URL
+  /v1/auth/github/callback:
+    get:
+      summary: Handle GitHub OAuth callback
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema: { type: string }
+        - name: state
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "302":
+          description: Session created, redirect to client
+  /v1/auth/logout:
+    post:
+      summary: Invalidate user session
+      responses:
+        "200":
+          description: Session terminated
+  /v1/me:
+    get:
+      summary: Current authenticated user and active organization
+      responses:
+        "200":
+          description: User profile and organization details
+        "401":
+          description: Unauthorized
+  /v1/webhooks/github:
+    post:
+      summary: Ingest signed GitHub App webhooks
+      responses:
+        "202":
+          description: Event accepted and enqueued
+        "401":
+          description: Missing or invalid signature
+  /v1/reviews:
+    get:
+      summary: List reviews for active tenant organization
+      responses:
+        "200":
+          description: List of reviews
+    post:
+      summary: Trigger a manual code review
+      responses:
+        "202":
+          description: Review job enqueued
+  /v1/reviews/{id}:
+    get:
+      summary: Retrieve specific review findings
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Detailed review record
+        "404":
+          description: Review not found
+  /main-server-logs:
+    get:
+      summary: Tail sanitized main-server logs (admin only)
+      responses:
+        "200":
+          description: Sanitized log entries
+  /client-server-logs:
+    get:
+      summary: Tail sanitized client logs (admin only)
+      responses:
+        "200":
+          description: Sanitized log entries
+  /rag-server-logs:
+    get:
+      summary: Tail sanitized RAG server logs (admin only)
+      responses:
+        "200":
+          description: Sanitized log entries

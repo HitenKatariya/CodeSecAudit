@@ -1,341 +1,415 @@
-# CodeSecAudit-RAG
+# CodeSecAudit AI
 
-**A Retrieval-Augmented pipeline for source-code vulnerability detection and security-fix guidance**, built on a unified, CWE/OWASP-labeled vulnerability dataset and a cheat-sheet-grounded retrieval corpus.
+**Developed by Hiten Katariya** (`hitenvk22@gmail.com`)
 
-- Dataset (HF): [`hitenvk22/CodeSecAudit-RAG-Shuffled`](https://huggingface.co/datasets/hitenvk22/CodeSecAudit-RAG-Shuffled)
-- Prototype notebook (Kaggle): [`CodeSecAudit-RAG`](https://www.kaggle.com/code/hitenkatariya/codesecaudit-rag)
+Enterprise AI Pull Request Reviewer for Security, Code Quality, and RAG-based Secure Coding Guidance
 
-## Live Deployment
+CodeSecAudit AI acts like an AI senior security engineer inside GitHub pull requests, detecting risky code, posting inline comments, suggesting fixes, and tracking review analytics before code is merged.
 
-| # | Service | Link |
-|---|---|---|
-| 1 | Website (live app) | [codesecaudit.vercel.app](https://codesecaudit.vercel.app) |
-| 2 | Backend API — Swagger docs | [codesecaudit-backend.onrender.com/docs](https://codesecaudit-backend.onrender.com/docs) |
-| 3 | Backend API — health check | [codesecaudit-backend.onrender.com/health](https://codesecaudit-backend.onrender.com/health) |
-| 4 | RAG Service — search UI/API | [codesec-rag-service.onrender.com](https://codesec-rag-service.onrender.com/) |
-| 5 | RAG Service — health check | [codesec-rag-service.onrender.com/health](https://codesec-rag-service.onrender.com/health) |
-| 6 | GitHub App — install page | [github.com/apps/codesecurityaudit-app](https://github.com/apps/codesecurityaudit-app) |
-| 7 | Source code (GitHub) | [hitenkatariya/CodeSecAudit](https://github.com/hitenkatariya/CodeSecAudit) |
-| 8 | Dataset (Hugging Face) | [hitenvk22/CodeSecAudit-RAG-Shuffled](https://huggingface.co/datasets/hitenvk22/CodeSecAudit-RAG-Shuffled) |
-| 9 | Prototype notebook (Kaggle) | [CodeSecAudit-RAG](https://www.kaggle.com/code/hitenkatariya/codesecaudit-rag) |
-
-## System Overview (as deployed)
-
-Three independent services, wired over HTTP (CWE ID is the join key):
-
-| Service | Folder | Role | Live |
-|---|---|---|---|
-| Website (Flask) | `website/` | Landing, GitHub OAuth login, email OTP, usage dashboard, review history | [codesecaudit.vercel.app](https://codesecaudit.vercel.app) |
-| Backend (FastAPI) | `backend/` | Rule-engine review (`review_engine/`), SQLite history (`review_store/`), GitHub PR webhook bot | [codesecaudit-backend.onrender.com](https://codesecaudit-backend.onrender.com/) |
-| RAG Service (FastAPI) | `rag-service/` | OWASP cheat-sheet semantic search over 2,833 chunks (ONNX MiniLM, no torch) | [codesec-rag-service.onrender.com](https://codesec-rag-service.onrender.com/) |
-
-### Backend API (Swagger)
-
-![Backend Swagger UI](assets/06-swagger.png)
-*Fig 6 — Live backend: `GET /, /health, /reviews, /stats`, `POST /review, /review/code`, `POST /webhook/github`. Every review returns risk score (0–100), verdict (`APPROVE`/`WARNING`/`REQUEST_CHANGES`), CWE-tagged issues and suggested fixes.*
-
-### GitHub App (PR bot)
-
-![GitHub App listing](assets/07-github-app.png)
-*Fig 7 — Public [CodeSecurityAudit App](https://github.com/apps/codesecurityaudit-app): install it on a repo and every pull request gets an automated security review — summary comment with risk score plus inline CWE findings on the exact risky lines.*
-
-> **Status:** Dataset + RAG retrieval + review engine + GitHub PR bot **live in production** (see links above). Supervised CWE classification and LLM-grounded generation remain future work — see [What's Left](#whats-left--in-progress).
+[![Author: Hiten Katariya](https://img.shields.io/badge/Author-Hiten%20Katariya-blue)](https://github.com/HitenKatariya)
+[![Python](https://img.shields.io/badge/Python-3.12+-blue)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.141+-009688)](https://fastapi.tiangolo.com/)
+[![Docker](https://img.shields.io/badge/Docker-compose-2496ED)](https://docs.docker.com/compose/)
+[![Hugging Face Dataset](https://img.shields.io/badge/HF-Dataset-FFD21E)](https://huggingface.co/datasets/hitenvk22/CodeSecAudit-RAG-Shuffled)
+[![Kaggle](https://img.shields.io/badge/Kaggle-Notebook-20BEFF)](https://www.kaggle.com/code/hitenkatariya/codesecaudit-rag)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
 
-## 1. Problem Statement
+## Live Links
 
-Static analyzers flag vulnerable code but rarely explain *why* it's vulnerable in a way a developer can act on, and most public vulnerability datasets (e.g. CodeXGLUE) only carry a **binary defective/not-defective label** with no CWE, no OWASP category, and no fix guidance.
-
-CodeSecAudit-RAG addresses this in two parts:
-
-1. **A unified, richly-labeled vulnerability dataset** — normalizing multiple public sources into one schema carrying CWE ID, OWASP Top-10 category, severity, and vulnerability name.
-2. **A Retrieval-Augmented Generation (RAG) layer** over the OWASP Cheat Sheet Series, so that a detected vulnerability can be paired with authoritative, CWE-tagged remediation guidance instead of a generic label.
+| Asset | Link |
+|---|---|
+| Author | **Hiten Katariya** ([GitHub](https://github.com/HitenKatariya)) |
+| Prototype Notebook (Kaggle) | https://www.kaggle.com/code/hitenkatariya/codesecaudit-rag |
+| Vulnerability Dataset (Hugging Face) | https://huggingface.co/datasets/hitenvk22/CodeSecAudit-RAG-Shuffled |
+| GitHub Repository | https://github.com/HitenKatariya/CodeSecAudit |
+| GitHub App | https://github.com/apps/codesecurityaudit-app |
+| App (Next.js SaaS Client) | https://codesec-client.onrender.com |
+| Core API (main-server) | https://codesec-main.onrender.com |
+| RAG Knowledge Base Service | https://codesec-rag.onrender.com |
 
 ---
 
-- Dataset: https://huggingface.co/datasets/hitenvk22/CodeSecAudit-RAG-Shuffled
-- Notebook: https://www.kaggle.com/code/hitenkatariya/codesecaudit-rag
+## Screenshots
 
+### PR Review — Inline Comments 
+Link : https://github.com/HitenKatariya/CodeSecAudit/pull/4
+![PR Review Bugs](docs/screenshots/github_pr_review_bugs.png)
+*Detected vulnerabilities with inline PR comments*
 
-## 2. What's Done
+![PR Review Suggestions](docs/screenshots/github_pr_review_suggest.png)
+*AI-powered fix suggestions in pull request review*
 
-### 2.1 Dataset Engineering
+### Dataset
 
-Combined and normalized two public sources into one schema and published it on Hugging Face:
+[![HF Dataset](docs/screenshots/hf-dataset.png)](https://huggingface.co/datasets/hitenvk22/CodeSecAudit-RAG-Shuffled)
+*CodeSecAudit-RAG dataset on Hugging Face — click to explore*
 
-| Source | Type | Role |
-|---|---|---|
-| CodeXGLUE Defect Detection | C code, binary label only | Bulk vulnerability/non-vulnerability signal |
-| OWASP Benchmark (Python) | Labeled test cases | CWE ID + OWASP category + severity ground truth |
+### API & Services
 
-**Dataset stats** (`hitenvk22/CodeSecAudit-RAG-Shuffled`):
-- **28,548 rows total** — Train: 22.8k · Validation: 2.85k · Test: 2.88k
-- Stored as auto-converted Parquet, split by `source_split`
-- Unified schema per row: `id, source_name, source_type, language, framework, task, cwe_id, owasp_category, severity, is_vulnerable, vulnerability_name, input_code, fixed_code, explanation, secure_pattern, tags, metadata`
+![API Swagger](docs/screenshots/codesecrag_api_swagger.png)
+*FastAPI backend with review and webhook endpoints*
 
-**Class distribution (EDA):**
+![Dashboard API](docs/screenshots/codesec_dashboard_api.png)
+*Streamlit analytics dashboard with review metrics*
 
-![Top 15 CWE distribution](assets/01-cwe-distribution.png)
-*Fig 1 — CWE distribution across the combined dataset. CodeXGLUE's binary-only labels dominate as `unknown`; OWASP Benchmark contributes the labeled long tail (CWE-330, CWE-643, CWE-22, CWE-328, CWE-79, etc.).*
+![RAG Service](docs/screenshots/rag_service_swagger.png)
+*RAG semantic search service over 2,800+ OWASP documents*
 
-![OWASP category distribution](assets/02-owasp-category-distribution.png)
-*Fig 2 — Same imbalance viewed by OWASP Top-10 category: A02 (Cryptographic Failures), A03 (Injection), and A01 (Broken Access Control) are the best-represented labeled categories.*
+### Email Notifications
 
-> **Known limitation, called out honestly:** the `unknown` bucket (~27.3k rows) reflects CodeXGLUE's lack of CWE/OWASP labels, not an actual dominant vulnerability class. This needs to be resolved before the dataset is used for supervised CWE classification (see below).
+![PR Review Email](docs/screenshots/pr_review_gmail.png)
+*Automated PR review summary delivered via email*
 
-### 2.2 RAG Corpus Construction
+### GitHub App
 
-- Parsed and chunked the **OWASP Cheat Sheet Series** (Markdown source docs — e.g. Cryptographic Storage, File Upload, DotNet Security, GraphQL, Business Logic, HTTP Headers cheat sheets).
-- Each chunk tagged with metadata: `source_file`, `cwe_id`, `title`, `section_title`.
-- Embedded and indexed for similarity search.
+![GitHub App](docs/screenshots/github_app.png)
+*CodeSecAudit AI GitHub App — install on your repositories*
 
-![RAG corpus coverage by CWE](assets/05-rag-corpus-coverage.png)
-*Fig 3 — Corpus coverage by CWE/security topic. Strongest coverage on CWE-89 (SQL Injection), CWE-79 (XSS), and CWE-94 (Code Injection); thinner coverage on CWE-90, CWE-502, CWE-434.*
+---
 
-### 2.3 Retrieval Prototype & Qualitative Testing
+## GitHub App Installation
 
-Built a `search_rag(query, top_k)` function and ran it against a fixed set of natural-language security questions to sanity-check retrieval quality:
+CodeSecAudit AI runs as a GitHub App that automatically reviews pull requests.
 
-```python
-test_queries = [
-    "How to prevent SQL injection?",
-    "How to avoid eval code injection?",
-    "How to store passwords securely?",
-    "How to prevent SSRF?",
-    "How to secure file uploads?",
-]
+### Install on your repository
+
+1. Visit the [GitHub App installation page](https://github.com/apps/codesecaudit-ai/installations/new)
+2. Choose your account or organization
+3. Select the repositories you want to review
+4. Click **Install**
+
+The app will:
+- Receive `pull_request` webhook events
+- Post review summaries and inline comments
+- Be visible as a check on PRs
+
+### Manual trigger (GitHub Action fallback)
+
+If you prefer not to use the GitHub App, you can also trigger reviews via GitHub Actions:
+
+```yaml
+- name: Run CodeSecAudit Review
+  uses: HitenKatariya/CodeSecAudit/.github/actions/review@main
 ```
 
-![Test queries and retrieval output](assets/04-rag-test-queries.png)
-*Fig 4 — Retrieval results for each test query, ranked by distance, with source cheat sheet, CWE ID, and snippet.*
+---
 
-![Retrieval results for SSRF and file upload](assets/03-rag-retrieval-ssrf-fileupload.png)
-*Fig 5 — Close-up: top-ranked chunks correctly surface the DotNet SSRF section and File Upload Cheat Sheet sections for their respective queries, with low distance scores (0.25–0.52) indicating strong relevance.*
+## What Problem It Solves
 
-**Early observation:** top-1 retrieval consistently returns the topically-correct cheat sheet section (e.g. SQL injection → DotNet/GraphQL/Database Security cheat sheets; file upload → File Upload Cheat Sheet), which validates the chunking + metadata tagging strategy before investing in a generation layer on top.
+- **Manual PR reviews are slow** — context-switching between diff view and security checklists costs teams hours per week.
+- **Security issues slip through** — CWE-94 (code injection), CWE-89 (SQLi), and CWE-78 (command injection) are routinely missed in handwritten reviews.
+- **Junior developers need guidance** — without inline, specific feedback, recurring vulnerabilities go unfixed.
+- **Teams need review history** — without analytics, there is no way to track security debt or review velocity across repos.
+
+CodeSecAudit AI addresses all four: automated detection with OWASP-aligned rules, optional RAG-based secure coding guidance, inline PR comments with fix suggestions, and a dashboard for review analytics.
 
 ---
 
-### Used Dataset 
-Here are the direct links to the official repositories and databases for the datasets and resources you listed:
+## Product Features
 
-**CodeXGLUE Defect Detection**
-
-* **Link:** [github.com/microsoft/CodeXGLUE/.../Defect-detection](https://github.com/microsoft/CodeXGLUE/tree/main/Code-Code/Defect-detection)
-* **Details:** Hosted in Microsoft's official CodeXGLUE repository, this specific dataset (based on the Devign framework) contains C source code used to train models to identify security defects like resource leaks and use-after-free vulnerabilities.
-
-**OWASP Benchmark (Python)**
-
-* **Link:** [github.com/OWASP-Benchmark](https://github.com/OWASP-Benchmark)
-* **Details:** While the flagship OWASP Benchmark was originally built for Java, community ports and adaptations for Python exist under this GitHub organization to evaluate Python vulnerability detection tools.
-
-**OWASP Cheat Sheet Series**
-
-* **GitHub Link:** [github.com/OWASP/CheatSheetSeries](https://github.com/OWASP/CheatSheetSeries)
-* **Web Link:** [cheatsheetseries.owasp.org](https://cheatsheetseries.owasp.org/)
-* **Details:** While this is a collection of application security guides rather than a code dataset, the raw Markdown files for the entire series are hosted openly on this GitHub repository.
-
-**"Later Sources"**
-
-* **Details:** This is **not a standalone dataset**. Because you are pulling from a list of security datasets, it is highly likely that you copied this from a table in a research paper or systematic review. In literature reviews, "Later Sources" is a common categorical header used to describe datasets or studies found *after* the original search protocol was conducted.
-
-**OWASP Benchmark (Java)**
-
-* **Link:** [github.com/OWASP/Benchmark](https://www.google.com/search?q=https://github.com/OWASP/Benchmark)
-* **Details:** The official, flagship OWASP test suite. It is a fully runnable open-source Java web application designed to evaluate the speed, coverage, and accuracy of automated vulnerability detection tools.
-
-**NIST Juliet Test Suite for Java (v1.3)**
-
-* **Link:** [samate.nist.gov/SARD/test-suites/111](https://www.google.com/search?q=https://samate.nist.gov/SARD/test-suites/111)
-* **Details:** Hosted by the NIST Software Assurance Reference Dataset (SARD) project, this contains nearly 29,000 synthetic Java programs with known, documented flaws mapped to specific Common Weakness Enumerations (CWEs).
-
-**NIST Juliet Test Suite for C/C++ (v1.3)**
-
-* **Link:** [samate.nist.gov/SARD/test-suites/112](https://samate.nist.gov/SARD/test-suites/112)
-* **Details:** Also hosted on NIST SARD, this is the C/C++ equivalent containing thousands of test cases with intentional vulnerabilities (like buffer overflows) alongside fixed versions of the code to test tool discrimination.
-
-## 3. What's Left / In Progress
-
-| Area | Gap | Planned Next Step |
-|---|---|---|
-| Label quality | ~96% of combined dataset has `unknown` CWE/OWASP (CodeXGLUE limitation) | Either restrict supervised classification training to the OWASP-Benchmark-labeled subset, or weak-label CodeXGLUE rows via the RAG layer / a CWE classifier |
-| Retrieval evaluation | Only qualitative (eyeballing top-k snippets) | Add quantitative metrics: Precision@k, Recall@k, MRR against a held-out labeled query set |
-| Classification model | Not yet trained | Fine-tune a code-vulnerability classifier (e.g. CodeBERT/GraphCodeBERT) on the labeled subset, output CWE + severity |
-| Generation layer | Retrieval-only right now | Add an LLM generation step that takes (flagged code + retrieved cheat-sheet chunks) → produces a plain-English explanation + fix suggestion, grounded in citations |
-| End-to-end pipeline | ~~Separate notebooks~~ → **Done**: `review_engine/pipeline.py` (rules → RAG enrich → risk/verdict) + `POST /review/code` with SQLite history | Add LLM generation + classifier on top |
-| Serving | ~~Notebook-only prototype~~ → **Done**: backend on Render, website on Vercel, RAG on Render (ONNX build fits 512 MB free tier) | Harden (Postgres for history, HF PRO Space as RAG alternative) |
-| Testing | No formal test suite | Add unit tests for chunking, retrieval, and schema validation |
-| Docs | This README is the first pass | Add data card / model card once classifier + generation land |
+| Feature | Details |
+|---|---|
+| **GitHub Action PR review** | Triggers on `opened`, `synchronize`, `reopened` — reviews `.py`, `.js`, `.ts` files |
+| **Summary comment** | Posts a markdown table with verdict, risk score, CWE breakdown, and suggested fixes |
+| **Inline file/line comments** | Posts comments directly on vulnerable lines in the PR diff (capped at 10) |
+| **7 CWE detectors** | CWE-94, CWE-89, CWE-78, CWE-328, CWE-798, CWE-22, CWE-918 |
+| **Severity + risk score** | Weighted severity produces a 0–100 risk score and verdict (APPROVE / WARNING / REQUEST_CHANGES) |
+| **Suggested fixes** | Template-based per CWE — tells the developer exactly what to change |
+| **RAG secure guidance** | Optional retrieval from 2,833 OWASP cheat sheet chunks for contextual advice |
+| **Review history DB** | Every review saved to SQLite with search by repo, PR number, verdict, date |
+| **Dashboard analytics** | Verdict distribution, risk trends, CWE breakdown, review detail viewer |
+| **Usage-limit SaaS design** | Schema ready for free-tier caps, plan enforcement, and owner contact |
+| **Resend email workflow design** | Welcome, usage guide, limit-reached notification templates |
+| **MongoDB Atlas design** | 7-collection schema for users, installations, reviews, plans, email events |
 
 ---
 
-## 4. Proposed Architecture (Refactored)
-
-### 4.1 Overall System Architecture
+## Architecture (Three-Server Blueprint)
 
 ```mermaid
 flowchart TD
-    subgraph Data["1. Data Pipeline"]
-        A1[CodeXGLUE Defect Detection] --> N[Normalizer]
-        A2[OWASP Benchmark Python] --> N
-        N --> D[(Unified Dataset<br/>HF: CodeSecAudit-RAG-Shuffled)]
-    end
-
-    subgraph Corpus["2. Knowledge Corpus Pipeline"]
-        C1[OWASP Cheat Sheet Series .md] --> C2[Chunker + CWE/Title Tagging]
-        C2 --> C3[Embedding Model]
-        C3 --> V[(Vector Store)]
-    end
-
-    subgraph Inference["3. Inference Pipeline (proposed)"]
-        I1[Input: source code snippet] --> I2[Vulnerability Classifier<br/>CWE + severity]
-        I2 --> I3[Query Builder]
-        I3 --> V
-        V --> I4[Top-k Retrieved Chunks]
-        I2 --> I5[Generation / LLM Layer]
-        I4 --> I5
-        I5 --> I6[Output: Explanation + Cited Fix Guidance]
-    end
-
-    D -.trains.-> I2
-```
-
-### 4.2 Data Pipeline Detail
-
-```mermaid
-flowchart LR
-    subgraph Sources
-        S1[CodeXGLUE<br/>~22.8k rows<br/>Binary label only]
-        S2[OWASP Benchmark<br/>~5.7k rows<br/>CWE + OWASP + Severity]
-    end
-
-    subgraph Normalization
-        N1[Schema Mapping]
-        N2[CWE ID Extraction]
-        N3[OWASP Category Mapping]
-        N4[Severity Assignment]
-        N5[Code + Fix Pairing]
-    end
-
-    subgraph Output
-        O1[(Unified Parquet<br/>28,548 rows<br/>17 columns)]
-    end
-
-    S1 --> N1
-    S2 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> N5
-    N5 --> O1
-```
-
-### 4.3 RAG Corpus Pipeline
-
-```mermaid
-flowchart TD
-    A[OWASP Cheat Sheet Series<br/>Markdown files] --> B[File Parser]
-    B --> C[Section Splitter]
-    C --> D[CWE ID Extractor<br/>regex + manual mapping]
-    D --> E[Metadata Enrichment<br/>source_file, title, section_title]
-    E --> F[Chunking<br/>~512 tokens per chunk]
-    F --> G[Embedding Model<br/>ONNX MiniLM int8]
-    G --> H[(In-memory index<br/>numpy cosine)]
-    
-    style A fill:#e1f5fe
-    style H fill:#f3e5f5
-```
-
-### 4.4 Inference Pipeline (Proposed)
-
-```mermaid
-flowchart TD
-    A[Source Code Input] --> B{Classifier}
-    B -->|CWE ID + Severity| C[Query Builder]
-    B -->|Code Features| E[CodeBERT / GraphCodeBERT]
-    
-    C --> D[Semantic Search<br/>Vector Store]
-    D --> F[Top-k Retrieved Chunks<br/>Cheat Sheet Sections]
-    
-    E --> G[LLM Generation Layer]
-    F --> G
-    
-    G --> H[Output]
-    H --> I[Vulnerability Explanation]
-    H --> J[Remediation Guidance]
-    H --> K[Citations<br/>Cheat Sheet References]
-    
-    style A fill:#fff3e0
-    style H fill:#e8f5e9
-```
-
-### 4.5 End-to-End Flow
-
-```mermaid
-sequenceDiagram
-    participant Dev as Developer
-    participant App as CodeSecAudit-RAG
-    participant Cls as Classifier
-    participant RAG as RAG Engine
-    participant LLM as Generation Layer
-    participant DB as Vector Store
-
-    Dev->>App: Submit source code
-    App->>Cls: Classify vulnerability
-    Cls->>App: CWE ID + Severity
-    App->>RAG: Query with CWE context
-    RAG->>DB: Semantic search
-    DB->>RAG: Top-k cheat sheet chunks
-    RAG->>LLM: Code + Retrieved chunks
-    LLM->>App: Explanation + Fix guidance
-    App->>Dev: Annotated report with citations
-```
-
-**Design principles for the refactor:**
-- **Separation of concerns** — data normalization, corpus indexing, and inference are independent, swappable modules (not notebook cells).
-- **Grounded generation** — the LLM layer never answers from parametric memory alone; every explanation is backed by a retrieved, cited cheat-sheet chunk.
-- **CWE as the join key** — classifier output and retrieval corpus both key off CWE ID, so the two pipelines can be developed and evaluated independently before integration.
-
----
-
-## 5. Repo Structure (actual)
-
-```
-CodeSecAudit/
-├── README.md
-├── .env / .env.example          # single env file for all services (never committed)
-├── docker-compose.yml           # backend + rag-service + website + mongo
-├── Dockerfile + start-all.sh    # all-in-one single-container image
-├── vercel.json + api/index.py   # website serverless entrypoint
-├── render.yaml                  # Render blueprint (backend + rag-service)
-├── backend/                     # FastAPI review API :8003
-│   ├── api/main.py              # /, /health, /review, /review/code, /reviews, /stats, /webhook/github
-│   ├── review_engine/           # critic (regex rules), pipeline, fixer, risk_score, remote_rag, github_app
-│   ├── review_store/            # SQLite review history
-│   ├── scripts/                 # CLI, dataset pipeline, eval, deploy helpers
-│   ├── eval/golden_cases.jsonl  # engine regression cases
-│   └── Dockerfile | requirements.txt | README.md
-├── rag-service/                 # FastAPI retrieval API :7860
-│   ├── rag_service/             # main.py, index.py (ONNX), schemas.py
-│   └── Dockerfile | requirements.txt | README.md
-├── website/                     # Flask SaaS site :5000
-│   ├── app.py, auth.py, otp.py, email_service.py, db.py, api_client.py, ...
-│   ├── templates/ | static/
-│   └── Dockerfile | requirements.txt | README.md
-├── assets/
-│   ├── 01-cwe-distribution.png
-│   ├── 02-owasp-category-distribution.png
-│   ├── 03-rag-retrieval-ssrf-fileupload.png
-│   ├── 04-rag-test-queries.png
-│   ├── 05-rag-corpus-coverage.png
-│   ├── 06-swagger.png
-│   └── 07-github-app.png
-├── notebooks/
-│   └── codesecaudit-rag.ipynb   # research prototype (EDA + RAG experiments)
-└── docs/
-    └── architecture.md (+ 20 topic docs)
+    Browser[Browser User] --> Client["client/ (Next.js + TSX)"]
+    Client -->|Same-origin rewrite /api/*| Main["main-server/ (Python + FastAPI)"]
+    Main --> PG[("PostgreSQL 16 (Persistence)")]
+    Main --> Redis[("Redis 7 (Sessions, Queues, Logs)")]
+    Main -->|Enqueue Job (202 Accepted)| Redis
+    Worker["main-worker (Background Worker)"] -->|Pop Job| Redis
+    Worker -->|Internal HTTP + Token| RAG["rag-server/ (Private FastAPI)"]
+    RAG --> Qdrant[("Qdrant (Vector DB)")]
+    Worker --> PG
+    Worker --> Redis
 ```
 
 ---
 
+## Repository Structure
+
+```
+client/                Next.js + TSX: Product UI, SSR, same-origin API proxy, admin log tails
+main-server/           Python + FastAPI: Auth, GitHub App, PostgreSQL persistence, Redis queues, admin logs
+rag-server/            Python + FastAPI: Private embedding microservice & Qdrant vector retrieval
+docs/                  Architecture, Operations, Runbook, and OpenAPI 3.1 contracts (docs/contracts/)
+.github/               CI workflow (ci.yml) and line-limit enforcement script (.github/scripts/)
+docker-compose.yml     Multi-container orchestrator (client, main-server, main-worker, rag-server, postgres, redis, qdrant)
+.env.example           Documented root environment configuration template
+```
+
+---
+
+## Dataset — CodeSecAudit-RAG
+
+The custom dataset powers both rule-based evaluation and the RAG retrieval service.
+
+| Metric | Value |
+|---|---|
+| Total review records | 28,548 |
+| RAG corpus chunks | 2,833 |
+| Embedding model | `all-MiniLM-L6-v2` (384-dim) |
+| Similarity | Cosine |
+| Sources | CodeXGLUE + OWASP Benchmark Python + OWASP Cheat Sheet Series |
+
+**Hugging Face Dataset**: https://huggingface.co/datasets/hitenvk22/CodeSecAudit-RAG-Shuffled
+
+**Build the index locally**:
+```bash
+python scripts/build_rag_index.py
+```
+
+---
+
+## Kaggle Notebook
+
+Explore the dataset, RAG corpus, and a prototype Critic → Retriever → Fixer pipeline on Kaggle:
+
+https://www.kaggle.com/code/hitenkatariya/codesecaudit-rag
+
+The notebook demonstrates:
+- Dataset exploration (28,548 records from CodeXGLUE + OWASP)
+- RAG corpus embedding and similarity search
+- Prototype review pipeline
+
+---
+
+## Quickstart
+
+### Local (no Docker)
+
+```bash
+pip install -e ".[dev]"
+python scripts/review_code.py --code "eval(user_input)" --json
+```
+
+### Docker Compose (lightweight, rules-only)
+
+```bash
+docker compose up --build
+```
+
+### Access the services
+
+| Service | URL |
+|---|---|
+| API | http://localhost:8003 |
+| API docs (Swagger) | http://localhost:8003/docs |
+| Review UI | http://localhost:8501 |
+| Dashboard | http://localhost:8502 |
+
+See [docs/docker.md](docs/docker.md) for RAG mode and build options.
+
+---
+
+## GitHub Action Usage
+
+The workflow at `.github/workflows/codesec-audit.yml` triggers automatically on `pull_request: [opened, synchronize, reopened]`.
+
+**What it does**:
+1. Checks out the PR branch
+2. Installs the CodeSecAudit package
+3. Runs `scripts/github_pr_review.py` — reviews changed `.py`, `.js`, `.ts` files
+4. Posts a **summary comment** with verdict, risk score, and issue table
+5. Posts **inline comments** on vulnerable lines (max 10)
+6. Skips lines without duplicates (detected via issue fingerprint)
+
+**Limitations**:
+- `use_rag=False` in CI (RAG caching not yet configured)
+- Non-blocking — always exits 0
+- No paid LLMs; all detection is rule-based
+
+### Dry-run locally
+
+```bash
+python scripts/github_pr_review.py --files examples/vulnerable_pr_demo.py --dry-run
+```
+
+Full documentation: [docs/github_action.md](docs/github_action.md)
+
+---
+
+## RAG Service
+
+The RAG retrieval service runs as a **separate Hugging Face Space** to keep the main deployment lightweight (~500 MB).
+
+**Live endpoint**: https://codesec-rag.onrender.com
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/health` | GET | Health check with index status |
+| `/rag/search` | POST | Search OWASP guidance by query |
+
+### Enable remote RAG in your environment
+
+```env
+CODESEC_ENABLE_RAG=true
+CODESEC_RAG_MODE=remote
+CODESEC_RAG_SERVICE_URL=https://codesec-rag.onrender.com
+CODESEC_RAG_API_KEY=your-key-here
+```
+
+Fallback: if the remote RAG service is unreachable, the review completes in rules-only mode with a `rag_error` in metadata.
+
+Full documentation: [docs/rag_service.md](docs/rag_service.md)
+
+---
+
+## Evaluation
+
+12 golden cases span all 7 supported CWEs and verify correctness after every change.
+
+```bash
+python scripts/evaluate_reviewer.py
+python scripts/smoke_test_demo_files.py
+```
+
+| Metric | Status |
+|---|---|
+| Golden cases | 12 |
+| Passing | 12/12 |
+| Multi-hit detection | 3 per rule max, 20 total max |
+| Safe file | Returns `APPROVE` with 0 issues |
+| Vulnerable demo | Returns `REQUEST_CHANGES` with multiple CWEs |
+
+Full documentation: [docs/evaluation.md](docs/evaluation.md)
+
+---
+
+## API Endpoints
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/` | GET | Root info — uptime, version, configuration |
+| `/health` | GET | Health check with RAG index status |
+| `/review` | POST | Review code (no persistence) |
+| `/review/code` | POST | Review code and save to history DB |
+| `/reviews` | GET | List past reviews (paginated) |
+| `/reviews/{id}` | GET | Single review with full issue details |
+| `/stats` | GET | Aggregated analytics |
+
+Full API reference with request/response examples: [docs/api_reference.md](docs/api_reference.md)
+
+---
+
+## Deployment Strategy
+
+| Component | Host | Status |
+|---|---|---|
+| RAG Service | Hugging Face Space | **Live** |
+| API + Dashboard | Render / Railway | Planned |
+| Database | MongoDB Atlas | Designed |
+| Email | Resend | Designed |
+| GitHub App | GitHub Marketplace | Planned |
+
+See [docs/deployment_strategy.md](docs/deployment_strategy.md) and [docs/deployment_status.md](docs/deployment_status.md).
+
+---
+
+## SaaS Future (Planned)
+
+The user flow for the SaaS version:
+
+1. Developer clicks **Install** on the GitHub App README badge
+2. GitHub App installs in the developer's repo or org
+3. Developer signs in via **GitHub OAuth**
+4. Dashboard shows review history, analytics, and settings
+5. Free tier: **30 PR reviews / month**
+6. Limit reached → Resend email with upgrade prompt
+7. Contact owner for custom plans
+
+Owner contact: **hitenvk22@gmail.com**
+
+Current status:
+- [x] Datasets + RAG corpus
+- [x] Kaggle notebook
+- [x] CLI reviewer
+- [x] FastAPI API
+- [x] GitHub Action
+- [x] Inline PR comments
+- [x] Evaluation
+- [x] Review history DB
+- [x] Dashboard
+- [x] Docker
+- [x] Remote RAG service (deployed)
+- [x] Render deployment
+- [x] MongoDB Atlas integration
+- [x] Resend email implementation
+- [x] GitHub OAuth
+- [x] GitHub App install flow
+- [ ] Usage limit enforcement
+
+---
+
+## Website / SaaS Portal
+
+Public product portal at **[https://codesec-client.onrender.com](https://codesec-client.onrender.com)**
+
+- **Landing page** — Product features, GitHub App install CTA, sign in CTA
+- **GitHub OAuth login** — Sign in with your GitHub account
+- **Email OTP verification** — 6-digit code via Resend, 10-minute expiry
+- **Dashboard** — Usage tracking, recent reviews, install GitHub App
+- **Reviews page** — PR review history from the FastAPI backend
+- **Usage page** — 30 free PR reviews/month, remaining quota, reset date
+- **Repos page** — Connected repository management (placeholder)
+- **Contact page** — Owner contact for plan increases
+
+### GitHub OAuth Flow
+
+1. Click "Sign in with GitHub" → redirected to GitHub OAuth
+2. Authorize → callback exchanges code for access token
+3. GitHub profile + primary email fetched
+4. User saved/updated in MongoDB
+5. If email not verified → OTP verification page
+6. After verification → dashboard
+
+### OTP Verification
+
+- 6-digit numeric code via Resend email
+- Expires in 10 minutes
+- Max 3 send attempts per 10 minutes
+- Max 3 verify attempts per OTP
+- OTP stored as SHA-256 hash (never plaintext)
+
+### Usage Display
+
+- 30 PR reviews per month on the free plan
+- Dashboard shows used / remaining / limit with progress bar
+- Contact owner for more usage when limit reached
+
+---
+
+## Responsible Use
+
+CodeSecAudit AI is a **defensive security tool**:
+- It detects vulnerabilities — it does not exploit them.
+- It is not a replacement for professional SAST tools or manual security review.
+- It is designed for **educational and secure-code-review purposes**.
+- Do not use it for offensive automation or vulnerability research on systems you do not own.
+
+---
+
+## Owner Contact
+
+For questions, custom plans, or enterprise security audits:
+
+**Hiten Katariya** — [hitenvk22@gmail.com](mailto:hitenvk22@gmail.com)  
+GitHub: [@HitenKatariya](https://github.com/HitenKatariya)

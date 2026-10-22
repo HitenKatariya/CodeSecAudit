@@ -1,0 +1,21 @@
+# CodeSecAudit AI — GitHub App Manifest
+# Visit the URL below to register the app in your GitHub account.
+name: codesec-audit-ai
+url: https://codesec-main.onrender.com
+hook_attributes:
+  url: https://codesec-main.onrender.com/v1/webhooks/github
+  active: true
+public: true
+default_permissions:
+  contents: read
+  pull_requests: write
+  issues: write
+  checks: write
+  emails: read
+default_events:
+  - pull_request
+  - ping
+redirect_url: https://github.com
+setup_url: https://codesec-main.onrender.com
+setup_on_update: true
+description: Automated security code review using OWASP-based detection rules + RAG context.

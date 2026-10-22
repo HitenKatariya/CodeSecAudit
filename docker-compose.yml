@@ -1,72 +1,199 @@
 services:
-  backend:
-    build: ./backend
-    image: codesec-backend:latest
-    container_name: codesec-backend
-    env_file: .env
-    ports:
-      - "8003:8003"
-    volumes:
-      - codesec_data:/app/data/app
+  postgres:
+    image: postgres:16-alpine
+    container_name: codesec-postgres
+    restart: unless-stopped
     environment:
-      - CODESEC_DB_PATH=/app/data/app/reviews.db
-      - CODESEC_RAG_MODE=remote
-      - CODESEC_RAG_SERVICE_URL=http://rag-service:7860
-    depends_on:
-      rag-service:
-        condition: service_started
+      POSTGRES_DB: ${POSTGRES_DB:-codesec}
+      POSTGRES_USER: ${POSTGRES_USER:-codesec}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-codesec_dev_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-codesec} -d ${POSTGRES_DB:-codesec}"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 15s
+    networks:
+      - codesec_internal
 
-  rag-service:
-    build: ./rag-service
-    image: codesec-rag-service:latest
-    container_name: codesec-rag-service
-    env_file: .env
-    ports:
-      - "7860:7860"
+  redis:
+    image: redis:7-alpine
+    container_name: codesec-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:7860/health"]
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - codesec_internal
+
+  qdrant:
+    image: qdrant/qdrant:v1.10.1
+    container_name: codesec-qdrant
+    restart: unless-stopped
+    volumes:
+      - qdrant_data:/qdrant/storage
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/6333 && printf 'GET /readyz HTTP/1.1\\r\\nHost: 127.0.0.1\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '200 OK' <&3"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "6333:6333"
+    networks:
+      - codesec_internal
+
+  rag-server:
+    build:
+      context: ./rag-server
+      dockerfile: Dockerfile
+    image: codesec-rag-server:local
+    container_name: codesec-rag-server
+    restart: unless-stopped
+    ports:
+      - "8010:8010"
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      QDRANT_URL: http://qdrant:6333
+      QDRANT_API_KEY: ${QDRANT_API_KEY:-}
+      REDIS_URL: redis://redis:6379/0
+      RAG_SERVICE_TOKEN: ${RAG_SERVICE_TOKEN:-dev_rag_service_token_secret}
+      # Any OpenAI-compatible /embeddings provider. Leave the key empty for
+      # local providers such as Ollama or LM Studio.
+      EMBEDDING_API_BASE: ${EMBEDDING_API_BASE:-https://api.openai.com/v1}
+      EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-3-small}
+      EMBEDDING_DIM: ${EMBEDDING_DIM:-1536}
+      EMBEDDING_BATCH_SIZE: ${EMBEDDING_BATCH_SIZE:-64}
+    depends_on:
+      qdrant:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8010/health/live')"]
       interval: 15s
-      timeout: 10s
-      retries: 10
-      start_period: 60s
-
-  website:
-    build: ./website
-    image: codesec-website:latest
-    container_name: codesec-website
-    env_file: .env
-    ports:
-      - "5000:10000"
-    environment:
-      - PORT=10000
-      - CODESEC_API_URL=http://backend:8003
-      - MONGODB_URI=mongodb://mongo:27017/codereview
-    depends_on:
-      backend:
-        condition: service_healthy
-      mongo:
-        condition: service_healthy
-
-  mongo:
-    image: mongo:7
-    container_name: codesec-mongo
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-    healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 15s
+      retries: 3
+      start_period: 30s
+    networks:
+      - codesec_internal
+
+  main-server:
+    build:
+      context: ./main-server
+      dockerfile: Dockerfile
+    image: codesec-main-server:local
+    container_name: codesec-main-server
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://codesec:codesec_dev_password@postgres:5432/codesec}
+      REDIS_URL: redis://redis:6379/0
+      SESSION_SECRET: ${SESSION_SECRET:-dev_session_secret_change_in_production_32b}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      GITHUB_APP_ID: ${GITHUB_APP_ID:-}
+      GITHUB_APP_PRIVATE_KEY: ${GITHUB_APP_PRIVATE_KEY:-}
+      GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET:-}
+      RAG_SERVICE_URL: http://rag-server:8010
+      RAG_SERVICE_TOKEN: ${RAG_SERVICE_TOKEN:-dev_rag_service_token_secret}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      MAIN_SERVER_URL: ${MAIN_SERVER_URL:-http://localhost:8000}
+      # Route GitHub's callback through the client proxy so the session cookie
+      # is stored on the client origin (the browser's origin).
+      OAUTH_REDIRECT_URI: ${OAUTH_REDIRECT_URI:-http://localhost:3000/api/auth/github/callback}
+      RUN_WORKER_INLINE: "false"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rag-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/live')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - codesec_internal
+
+  main-worker:
+    image: codesec-main-server:local
+    # Reuse the image built by main-server instead of trying to pull it.
+    pull_policy: never
+    container_name: codesec-main-worker
+    restart: unless-stopped
+    command: ["python", "-m", "app.jobs.worker"]
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://codesec:codesec_dev_password@postgres:5432/codesec}
+      REDIS_URL: redis://redis:6379/0
+      RAG_SERVICE_URL: http://rag-server:8010
+      RAG_SERVICE_TOKEN: ${RAG_SERVICE_TOKEN:-dev_rag_service_token_secret}
+      # Needed to post the review back as a PR comment (github_app.py).
+      GITHUB_APP_ID: ${GITHUB_APP_ID:-}
+      GITHUB_APP_PRIVATE_KEY: ${GITHUB_APP_PRIVATE_KEY:-}
+      # LLM review stage (pr_agent_client.py) - see docs/PR_AGENT_INTEGRATION_GUIDE.md.
+      # Groq first (free), then NVIDIA NIM, then Hugging Face as fallbacks.
+      PR_AGENT_REVIEW_ENABLED: ${PR_AGENT_REVIEW_ENABLED:-false}
+      PR_AGENT_MODEL: ${PR_AGENT_MODEL:-groq/llama-3.3-70b-versatile}
+      PR_AGENT_FALLBACK_MODELS: ${PR_AGENT_FALLBACK_MODELS:-nvidia_nim/meta/llama-3.1-70b-instruct,huggingface/meta-llama/Llama-3.1-8B-Instruct}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      NVIDIA_NIM_API_KEY: ${NVIDIA_NIM_API_KEY:-}
+      HUGGINGFACE_API_KEY: ${HUGGINGFACE_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      main-server:
+        condition: service_healthy
+    healthcheck:
+      disable: true
+    networks:
+      - codesec_internal
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    image: codesec-client:local
+    container_name: codesec-client
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      MAIN_SERVER_URL: http://main-server:8000
+    depends_on:
+      main-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - codesec_internal
 
 volumes:
-  codesec_data:
-  mongo_data:
+  postgres_data:
+  redis_data:
+  qdrant_data:
+
+networks:
+  codesec_internal:
+    driver: bridge

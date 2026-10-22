@@ -1,0 +1,32 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "codesec-main-server"
+version = "0.1.0"
+description = "Core security-owning backend, OAuth/App auth, review orchestrator, and PostgreSQL persistence"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.141.1",
+    "uvicorn>=0.34.0",
+    "pydantic>=2.10.4",
+    "pydantic-settings>=2.7.0",
+    "sqlalchemy[asyncio]>=2.0.36",
+    "asyncpg>=0.30.0",
+    "alembic>=1.14.0",
+    "redis>=5.2.1",
+    "httpx>=0.28.1",
+    "pyjwt[crypto]>=2.15.1",
+    "pr-agent>=0.48.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "aiosqlite>=0.20.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]

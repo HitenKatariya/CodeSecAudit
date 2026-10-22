@@ -1,6 +1,6 @@
 # RAG Service Architecture
 
-**Live endpoint**: https://hitenvk22-codesec-rag-service.hf.space
+**Live endpoint**: https://OMCHOKSI108-codereview-agent.hf.space
 
 > **Production**: Always set `RAG_API_KEY` on the RAG Space. Without it, the service is **public** — anyone with the Space URL can query your RAG index. The main API should also set `CODESEC_RAG_API_KEY` to match.
 
@@ -17,10 +17,10 @@ call the RAG service over HTTP when needed.
 
 ```bash
 # Health
-curl https://hitenvk22-codesec-rag-service.hf.space/health
+curl https://OMCHOKSI108-codereview-agent.hf.space/health
 
 # Search
-curl -X POST https://hitenvk22-codesec-rag-service.hf.space/rag/search \
+curl -X POST https://OMCHOKSI108-codereview-agent.hf.space/rag/search \
   -H "Content-Type: application/json" \
   -d '{"query":"SQL injection","top_k":2}'
 ```
@@ -80,7 +80,7 @@ curl -X POST http://localhost:7860/rag/search \
 
 ## Deploy to Hugging Face Space
 
-> **Status**: The RAG service is already live at https://hitenvk22-codesec-rag-service.hf.space.
+> **Status**: The RAG service is already live at https://OMCHOKSI108-codereview-agent.hf.space.
 > The instructions below document the deployment process for reference or to redeploy to a new Space.
 
 ### Method A — Python deploy script (recommended)
@@ -89,7 +89,7 @@ Requires `huggingface_hub` installed. Automates packaging, Space creation, file 
 
 ```bash
 export HF_TOKEN="your_huggingface_write_token"
-export HF_RAG_SPACE_ID="hitenvk22/codesec-rag-service"
+export HF_RAG_SPACE_ID="OMCHOKSI108/codereview-agent"
 export RAG_API_KEY="your-shared-rag-key"
 
 python scripts/deploy_hf_rag_space.py
@@ -114,17 +114,17 @@ python scripts/prepare_hf_rag_space.py
 # 2. Push to Hugging Face
 cd dist/huggingface-rag-space
 git init
-git remote add origin https://huggingface.co/spaces/hitenvk22/codesec-rag-service
+git remote add origin https://huggingface.co/spaces/OMCHOKSI108/codereview-agent
 git add .
 git commit -m "deploy CodeSecAudit RAG service"
 git push origin main
 ```
 
-Then add secrets manually at https://huggingface.co/spaces/hitenvk22/codesec-rag-service/settings:
+Then add secrets manually at https://huggingface.co/spaces/OMCHOKSI108/codesec-rag-service/settings:
 | Secret | Required | Description |
 |---|---|---|
 | `RAG_API_KEY` | **Production** | Shared API key for request auth. If empty, public. |
-| `RAG_DATASET_REPO` | No | HF dataset repo (default: `hitenvk22/CodeSecAudit-RAG-Shuffled`) |
+| `RAG_DATASET_REPO` | No | HF dataset repo (default: `OMCHOKSI108/CodeSecAudit-RAG`) |
 | `RAG_CORPUS_FILE` | No | Path to corpus in repo |
 | `RAG_EMBEDDING_MODEL` | No | Sentence-transformer model name |
 
@@ -165,7 +165,7 @@ curl -X POST http://localhost:7860/rag/search \
 ### Verify the remote service
 
 ```bash
-export CODESEC_RAG_SERVICE_URL=https://hitenvk22-codesec-rag-service.hf.space
+export CODESEC_RAG_SERVICE_URL=https://OMCHOKSI108-codereview-agent.hf.space
 export CODESEC_RAG_API_KEY=your-key
 
 python scripts/check_remote_rag_service.py
@@ -174,7 +174,7 @@ python scripts/check_remote_rag_service.py
 Expected output:
 
 ```
-Checking remote RAG service at: https://hitenvk22-codesec-rag-service.hf.space
+Checking remote RAG service at: https://OMCHOKSI108-codereview-agent.hf.space
 
 [1/2] Health check:
   status:        ok
@@ -203,7 +203,7 @@ OK: Remote RAG service is healthy and responding
 # In your main API .env:
 CODESEC_ENABLE_RAG=true
 CODESEC_RAG_MODE=remote
-CODESEC_RAG_SERVICE_URL=https://hitenvk22-codesec-rag-service.hf.space
+CODESEC_RAG_SERVICE_URL=https://OMCHOKSI108-codereview-agent.hf.space
 CODESEC_RAG_API_KEY=your-internal-key
 ```
 
@@ -257,7 +257,7 @@ ChromaDB index.
 | Variable | Required | Description |
 |---|---|---|
 | `RAG_API_KEY` | **Production** | API key for request auth. **Must be set in production.** If empty, anyone with the URL can query your RAG index. |
-| `RAG_DATASET_REPO` | No | HF dataset repo (default: `hitenvk22/CodeSecAudit-RAG-Shuffled`) |
+| `RAG_DATASET_REPO` | No | HF dataset repo (default: `OMCHOKSI108/CodeSecAudit-RAG`) |
 | `RAG_CORPUS_FILE` | No | Path to corpus file in repo |
 | `RAG_EMBEDDING_MODEL` | No | Sentence-transformer model name |
 | `RAG_INDEX_PATH` | No | Temp path for index (unused with numpy impl) |

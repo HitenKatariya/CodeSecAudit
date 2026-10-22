@@ -1,0 +1,1835 @@
+{
+  "info": {
+    "_postman_id": "codesec-audit-full-api-suite-v1",
+    "name": "CodeSecAudit AI - Full E2E API Suite",
+    "description": "Comprehensive end-to-end API collection for CodeSecAudit AI. Enables automated 1-by-1 testing of all endpoints across Main Server (FastAPI), RAG Server (Vector Search & Embeddings), and Client Web Proxy (Next.js 14). Features automated HMAC-SHA256 signature calculation, session propagation, and test assertions.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 - Health & System Discovery",
+      "item": [
+        {
+          "name": "1.1 Main Server Root API Directory",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Valid root service catalogue\", function () {",
+                  "    const res = pm.response.json();",
+                  "    pm.expect(res.service).to.eql(\"codesec-main-server\");",
+                  "    pm.expect(res.endpoints).to.be.an(\"object\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{main_url}}/",
+              "host": [
+                "{{main_url}}"
+              ],
+              "path": []
+            },
+            "description": "Returns service metadata, documentation links, and route catalogue."
+          },
+          "response": []
+        },
+        {
+          "name": "1.2 Main Server Liveness Probe",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(pm.response.json().status).to.eql(\"ok\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{main_url}}/health/live",
+              "host": [
+                "{{main_url}}"
+              ],
+              "path": [
+                "health",
+                "live"
+              ]
+            },
+            "description": "Kubernetes / Docker liveness probe verifying HTTP daemon is responsive."
+          },
+          "response": []
+        },
+        {
+          "name": "1.3 Main Server Readiness Probe",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Readiness check passes or reports components\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 503]);",
+                  "    const res = pm.response.json();",
+                  "    if (pm.response.code === 200) {",
+                  "        pm.expect(res.status).to.eql(\"ready\");",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{main_url}}/health/ready",
+              "host": [
+                "{{main_url}}"
+              ],
+              "path": [
+                "health",
+                "ready"
+              ]
+            },
+            "description": "Deep readiness probe checking PostgreSQL, Redis, and RAG Service availability."
+          },
+          "response": []
+        },
+        {
+          "name": "1.4 Main Server Version Info",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const res = pm.response.json();",
+                  "    pm.expect(res.service).to.eql(\"main-server\");",
+                  "    pm.expect(res.version).to.be.a(\"string\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{main_url}}/version",
+              "host": [
+                "{{main_url}}"
+              ],
+              "path": [
+                "version"
+              ]
+            },
+            "description": "Returns application version and git commit SHA."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02 - Authentication & Sessions",
+      "item": [
+        {
+          "name": "2.1 GitHub OAuth Start (PKCE Redirect)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Redirects to GitHub OAuth (302/307)\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 302, 307]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{main_url}}/v1/auth/github/start",
+              "host": [
+                "{{main_url}}"
+              ],
+              "path": [
+                "v1",
+                "auth",
+                "github",
+                "start"
+              ]
+            },
+            "description": "Initiates GitHub OAuth flow with state & code verifier in session."
+          },
+          "response": []
+        },
+        {
+          "name": "2.2 GitHub OAuth Callback Guard",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Guards against invalid OAuth state (400 or 422)\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 422]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{main_url}}/v1/auth/github/callback?code=mock_code&state=mock_state",
+              "host": [
+                "{{main_url}}"
+              ],
+              "path": [
+                "v1",
+                "auth",
+                "github",
+                "callback"
+              ],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "mock_code"
+                },
+                {
+                  "key": "state",
+                  "value": "mock_state"
+                }
+              ]
+            },
+            "description": "Tests OAuth callback validation guard with invalid/mock state."
+          },
+          "response": []
+        },
+        {
+          "name": "2.3 Get Current User Profile (/me)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Valid user profile returned\", function () {",
+                  "    const res = pm.response.json();",
+                  "    pm.expect(res.id).to.be.a(\"string\");",
+                  "    pm.expect(res.username).to.be.a(\"string\");",
+                  "    pm.expect(res.active_organization_id).to.be.a(\"string\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "codesec_session={{codesec_session}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{main_url}}/v1/auth/me",
+              "host": [
+                "{{main_url}}"
+              ],
+              "path": [
+                "v1",
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Retrieves current authenticated tenant profile, active organization, and admin status."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "03 - Repositories Management",
+      "item": [
+        {
+          "name": "3.1 List Repositories",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Returns repository list\", function () {",
+                  "    const res = pm.response.json();",
+                  "    pm.expect(res).to.be.an(\"array\");",
+                  "    if (res.length > 0) {",
+                  "        pm.environment.set(\"repo_id\", res[0].id);",
+                  "        pm.expect(res[0]).to.have.property(\"security_score\");",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "codesec_session={{codesec_session}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{main_url}}/v1/repositories",
+              "host": [
+                "{{main_url}}"
+              ],
+              "path": [
+                "v1",
+                "repositories"
+              ]
+            },
+            "description": "Lists all monitored repositories in the tenant's organization with risk metrics."
+          },
+          "response": []
+        },
+        {
+          "name": "3.2 Get Repository Details",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Repository payload structure\", function () {",
+                  "    const res = pm.response.json();",
+                  "    pm.expect(res.id).to.eql(pm.environment.get(\"repo_id\"));",
+                  "    pm.expect(res.status).to.be.oneOf([\"Protected\", \"Warning\", \"Blocked\"]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "codesec_session={{codesec_session}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{main_url}}/v1/repositories/{{repo_id}}",
+              "host": [
+                "{{main_url}}"
+              ],
+              "path": [
+                "v1",
+                "repositories",
+                "{{repo_id}}"
+              ]
+            },
+            "description": "Fetches specific repository details, security score, and open finding counts."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "04 - Security Policies",
+      "item": [
+        {
+          "name": "4.1 Get Organization Security Policy",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Policy properties exist\", function () {",
+                  "    const res = pm.response.json();",
+                  "    pm.expect(res).to.have.property(\"block_critical\");",
+                  "    pm.expect(res).to.have.property(\"min_security_score\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "codesec_session={{codesec_session}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{main_url}}/v1/policies",
+              "host": [
+                "{{main_url}}"
+              ],
+              "path": [
+                "v1",
+                "policies"
+              ]
+            },
+            "description": "Fetches gating rules, threshold score, and blocked vulnerability classes."
+          },
+          "response": []
+        },
+        {
+          "name": "4.2 Update Security Policy",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Policy updated successfully\", function () {",
+                  "    const res = pm.response.json();",
+                  "    pm.expect(res.min_security_score).to.eql(85);",
+                  "    pm.expect(res.block_critical).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "codesec_session={{codesec_session}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{main_url}}/v1/policies",
+              "host": [
+                "{{main_url}}"
+              ],
+              "path": [
+                "v1",
+                "policies"
+              ]
+            },
+            "description": "Updates organization policy rules in Redis for PR gating.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"block_critical\": true,\n  \"block_secrets\": true,\n  \"block_high\": true,\n  \"block_medium\": false,\n  \"min_security_score\": 85,\n  \"confidence_threshold\": 75,\n  \"secret_detection\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "05 - Review Orchestration & Jobs",
+      "item": [
+        {
+          "name": "5.1 Enqueue Manual Review (Vulnerabilities: SQLi + Command Injection)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 202 Accepted\", function () {",
+                  "    pm.response.to.have.status(202);",
+                  "});",
+                  "pm.test(\"Job enqueued with valid job_id\", function () {",
+                  "    const res = pm.response.json();",
+                  "    pm.expect(res.status).to.eql(\"enqueued\");",
+                  "    pm.expect(res.job_id).to.be.a(\"string\");",
+                  "    pm.environment.set(\"test_job_id\", res.job_id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "codesec_session={{codesec_session}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{main_url}}/v1/reviews",
+              "host": [
+                "{{main_url}}"
+              ],
+              "path": [
+                "v1",
+                "reviews"
+              ]
+            },
+            "description": "Enqueues a review job with dangerous code to test detector engine and RAG enrichment.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"repository_id\": \"{{repo_id}}\",\n  \"code_content\": \"import os\\nimport sqlite3\\n\\ndef login(req):\\n    user = req.params['user']\\n    cmd = req.params['cmd']\\n    os.system('echo ' + cmd)\\n    cursor.execute(f'SELECT * FROM users WHERE name = {user}')\\n\",\n  \"file_path\": \"auth/controller.py\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "5.2 Enqueue Clean Code Review (No Vulnerabilities)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 202 Accepted\", function () {",
+                  "    pm.response.to.have.status(202);",
+                  "});",
+                  "pm.test(\"Job ID returned\", function () {",
+                  "    pm.expect(pm.response.json().job_id).to.be.a(\"string\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "codesec_session={{codesec_session}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{main_url}}/v1/reviews",
+              "host": [
+                "{{main_url}}"
+              ],
+              "path": [
+                "v1",
+                "reviews"
+              ]
+            },
+            "description": "Enqueues secure code using parameterized queries and safe hashing.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"repository_id\": \"{{repo_id}}\",\n  \"code_content\": \"import hashlib\\nimport sqlite3\\n\\ndef safe_hash(password: str) -> str:\\n    return hashlib.sha256(password.encode()).hexdigest()\\n\\ndef get_user(db, user_id: int):\\n    return db.execute('SELECT * FROM users WHERE id = ?', (user_id,)).fetchone()\\n\",\n  \"file_path\": \"security/safe_utils.py\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "5.3 Enqueue Suppressed Vulnerability Code Review",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 202 Accepted\", function () {",
+                  "    pm.response.to.have.status(202);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "codesec_session={{codesec_session}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{main_url}}/v1/reviews",
+              "host": [
+                "{{main_url}}"
+              ],
+              "path": [
+                "v1",
+                "reviews"
+              ]
+            },
+            "description": "Verifies inline directive suppression (`codesec-ignore-next-line: CWE-94`).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"repository_id\": \"{{repo_id}}\",\n  \"code_content\": \"# codesec-ignore-next-line: CWE-94\\neval('2 + 2')\\n\",\n  \"file_path\": \"calculator/evaluator.py\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "5.4 List Reviews (Paginated)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Review list parsed\", function () {",
+                  "    const res = pm.response.json();",
+                  "    pm.expect(res).to.be.an(\"array\");",
+                  "    if (res.length > 0) {",
+                  "        pm.environment.set(\"review_id\", res[0].id);",
+                  "        pm.expect(res[0]).to.have.property(\"verdict\");",
+                  "        pm.expect(res[0]).to.have.property(\"risk_score\");",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "codesec_session={{codesec_session}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{main_url}}/v1/reviews?limit=20&offset=0",
+              "host": [
+                "{{main_url}}"
+              ],
+              "path": [
+                "v1",
+                "reviews"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "Lists review history for the active organization."
+          },
+          "response": []
+        },
+        {
+          "name": "5.5 Get Review Detail & Findings",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Review details valid\", function () {",
+                  "    const res = pm.response.json();",
+                  "    pm.expect(res.id).to.eql(pm.environment.get(\"review_id\"));",
+                  "    pm.expect(res.findings).to.be.an(\"array\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "codesec_session={{codesec_session}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{main_url}}/v1/reviews/{{review_id}}",
+              "host": [
+                "{{main_url}}"
+              ],
+              "path": [
+                "v1",
+                "reviews",
+                "{{review_id}}"
+              ]
+            },
+            "description": "Retrieves a specific review by ID including all detected findings, risk score, and verdict."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "06 - Security Findings Triage",
+      "item": [
+        {
+          "name": "6.1 List All Open Findings",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Findings list structure\", function () {",
+                  "    const res = pm.response.json();",
+                  "    pm.expect(res).to.be.an(\"array\");",
+                  "    if (res.length > 0) {",
+                  "        pm.environment.set(\"finding_id\", res[0].id);",
+                  "        pm.expect(res[0]).to.have.property(\"cwe_id\");",
+                  "        pm.expect(res[0]).to.have.property(\"severity\");",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "codesec_session={{codesec_session}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{main_url}}/v1/findings?limit=50",
+              "host": [
+                "{{main_url}}"
+              ],
+              "path": [
+                "v1",
+                "findings"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            },
+            "description": "Lists all security findings across all repositories for the organization."
+          },
+          "response": []
+        },
+        {
+          "name": "6.2 Filter Findings by Critical Severity",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Filtered items have critical severity\", function () {",
+                  "    const res = pm.response.json();",
+                  "    res.forEach(item => {",
+                  "        pm.expect(item.severity.toLowerCase()).to.eql(\"critical\");",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "codesec_session={{codesec_session}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{main_url}}/v1/findings?severity=critical",
+              "host": [
+                "{{main_url}}"
+              ],
+              "path": [
+                "v1",
+                "findings"
+              ],
+              "query": [
+                {
+                  "key": "severity",
+                  "value": "critical"
+                }
+              ]
+            },
+            "description": "Filters security findings by 'critical' severity."
+          },
+          "response": []
+        },
+        {
+          "name": "6.3 Filter Findings by CWE-89 (SQL Injection)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Findings match CWE-89\", function () {",
+                  "    const res = pm.response.json();",
+                  "    res.forEach(item => {",
+                  "        pm.expect(item.cwe_id).to.eql(\"CWE-89\");",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "codesec_session={{codesec_session}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{main_url}}/v1/findings?cwe_id=CWE-89",
+              "host": [
+                "{{main_url}}"
+              ],
+              "path": [
+                "v1",
+                "findings"
+              ],
+              "query": [
+                {
+                  "key": "cwe_id",
+                  "value": "CWE-89"
+                }
+              ]
+            },
+            "description": "Filters findings specifically for SQL Injection vulnerabilities."
+          },
+          "response": []
+        },
+        {
+          "name": "6.4 Get Finding Detail by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Finding details structure\", function () {",
+                  "    const res = pm.response.json();",
+                  "    pm.expect(res.id).to.eql(pm.environment.get(\"finding_id\"));",
+                  "    pm.expect(res).to.have.property(\"suggested_fix\");",
+                  "    pm.expect(res).to.have.property(\"code_snippet\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "codesec_session={{codesec_session}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{main_url}}/v1/findings/{{finding_id}}",
+              "host": [
+                "{{main_url}}"
+              ],
+              "path": [
+                "v1",
+                "findings",
+                "{{finding_id}}"
+              ]
+            },
+            "description": "Fetches detailed remediation guidance, attack scenario, and code snippet for a finding."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "07 - Team Management",
+      "item": [
+        {
+          "name": "7.1 List Team Members & Roles",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Team member list structure\", function () {",
+                  "    const res = pm.response.json();",
+                  "    pm.expect(res).to.be.an(\"array\");",
+                  "    if (res.length > 0) {",
+                  "        pm.expect(res[0]).to.have.property(\"role\");",
+                  "        pm.expect(res[0]).to.have.property(\"email\");",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "codesec_session={{codesec_session}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{main_url}}/v1/team",
+              "host": [
+                "{{main_url}}"
+              ],
+              "path": [
+                "v1",
+                "team"
+              ]
+            },
+            "description": "Retrieves the team roster for the current active organization."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "08 - GitHub Webhooks & Signatures",
+      "item": [
+        {
+          "name": "8.1 Ingest GitHub Pull Request Webhook (Auto HMAC-SHA256 Signed)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var secret = pm.environment.get(\"github_webhook_secret\") || \"dev_github_webhook_secret_key\";",
+                  "var body = pm.request.body.raw;",
+                  "var hash = CryptoJS.HmacSHA256(body, secret).toString(CryptoJS.enc.Hex);",
+                  "pm.environment.set(\"webhook_signature\", \"sha256=\" + hash);",
+                  "pm.request.headers.upsert({key: \"X-Hub-Signature-256\", value: \"sha256=\" + hash});",
+                  "pm.request.headers.upsert({key: \"X-GitHub-Delivery\", value: pm.variables.replaceIn('{{$guid}}')});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Webhook accepted or handled correctly\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 202]);",
+                  "    const res = pm.response.json();",
+                  "    pm.expect(res).to.have.property(\"status\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-GitHub-Event",
+                "value": "pull_request",
+                "type": "text"
+              },
+              {
+                "key": "X-GitHub-Delivery",
+                "value": "{{$guid}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Hub-Signature-256",
+                "value": "{{webhook_signature}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{main_url}}/v1/webhooks/github",
+              "host": [
+                "{{main_url}}"
+              ],
+              "path": [
+                "v1",
+                "webhooks",
+                "github"
+              ]
+            },
+            "description": "Simulates incoming GitHub PR webhook. Pre-request script automatically signs payload using HMAC-SHA256.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"action\":\"opened\",\"installation\":{\"id\":12345678},\"repository\":{\"id\":98765432,\"full_name\":\"omchoksi/CodeSecurityAuditAgent\",\"private\":false},\"pull_request\":{\"number\":108,\"head\":{\"sha\":\"c0ffeebabe1234567890\"}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "8.2 Ingest Webhook - Invalid Signature Test",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Rejects unauthenticated webhook with 401 Unauthorized\", function () {",
+                  "    pm.expect(pm.response.code).to.eql(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-GitHub-Event",
+                "value": "pull_request",
+                "type": "text"
+              },
+              {
+                "key": "X-GitHub-Delivery",
+                "value": "{{$guid}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Hub-Signature-256",
+                "value": "sha256=invalidbadhash000000000000000000000000000000000000000000000000",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{main_url}}/v1/webhooks/github",
+              "host": [
+                "{{main_url}}"
+              ],
+              "path": [
+                "v1",
+                "webhooks",
+                "github"
+              ]
+            },
+            "description": "Tests security rejection when X-Hub-Signature-256 does not match.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"action\":\"opened\",\"installation\":{\"id\":12345678},\"repository\":{\"id\":98765432,\"full_name\":\"omchoksi/CodeSecurityAuditAgent\",\"private\":false},\"pull_request\":{\"number\":108,\"head\":{\"sha\":\"c0ffeebabe1234567890\"}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "09 - Admin Log Streaming & Auditing",
+      "item": [
+        {
+          "name": "9.1 Tail Main-Server Logs",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Log entries format\", function () {",
+                  "    const res = pm.response.json();",
+                  "    pm.expect(res).to.be.an(\"array\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "codesec_session={{codesec_session}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{main_url}}/main-server-logs?limit=25",
+              "host": [
+                "{{main_url}}"
+              ],
+              "path": [
+                "main-server-logs"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "25"
+                }
+              ]
+            },
+            "description": "Tails sanitized Redis stream logs for main-server (requires system admin)."
+          },
+          "response": []
+        },
+        {
+          "name": "9.2 Tail Client-Server Logs",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "codesec_session={{codesec_session}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{main_url}}/client-server-logs?limit=25",
+              "host": [
+                "{{main_url}}"
+              ],
+              "path": [
+                "client-server-logs"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "25"
+                }
+              ]
+            },
+            "description": "Tails sanitized Redis stream logs for client Next.js application."
+          },
+          "response": []
+        },
+        {
+          "name": "9.3 Tail RAG-Server Logs",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "codesec_session={{codesec_session}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{main_url}}/rag-server-logs?limit=25",
+              "host": [
+                "{{main_url}}"
+              ],
+              "path": [
+                "rag-server-logs"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "25"
+                }
+              ]
+            },
+            "description": "Tails sanitized Redis stream logs for RAG vector microservice."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "10 - RAG Knowledge Base & Embeddings",
+      "item": [
+        {
+          "name": "10.1 RAG Server Liveness Probe",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(pm.response.json().status).to.eql(\"ok\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{rag_url}}/health/live",
+              "host": [
+                "{{rag_url}}"
+              ],
+              "path": [
+                "health",
+                "live"
+              ]
+            },
+            "description": "Liveness probe for RAG microservice."
+          },
+          "response": []
+        },
+        {
+          "name": "10.2 RAG Server Readiness Probe",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Readiness probe returns status (200 or 503 if unconfigured)\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 503]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{rag_url}}/health/ready",
+              "host": [
+                "{{rag_url}}"
+              ],
+              "path": [
+                "health",
+                "ready"
+              ]
+            },
+            "description": "Checks Qdrant connection and embedding model status."
+          },
+          "response": []
+        },
+        {
+          "name": "10.3 RAG Server Version & Model Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const res = pm.response.json();",
+                  "    pm.expect(res.service).to.eql(\"rag-server\");",
+                  "    pm.expect(res).to.have.property(\"embedding_model\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{rag_url}}/version",
+              "host": [
+                "{{rag_url}}"
+              ],
+              "path": [
+                "version"
+              ]
+            },
+            "description": "Reports RAG corpus version and embedding model identifier."
+          },
+          "response": []
+        },
+        {
+          "name": "10.4 Semantic Search OWASP Guidance (CWE-89 SQLi)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Semantic search passes (200) or reports provider status (502/503)\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 502, 503]);",
+                  "    if (pm.response.code === 200) {",
+                  "        const res = pm.response.json();",
+                  "        pm.expect(res.results).to.be.an(\"array\");",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Internal-RAG-Token",
+                "value": "{{rag_service_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{rag_url}}/v1/search",
+              "host": [
+                "{{rag_url}}"
+              ],
+              "path": [
+                "v1",
+                "search"
+              ]
+            },
+            "description": "Retrieves top OWASP cheat sheet chunks for SQL injection via vector search.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"SQL injection concatenation in database execute query\",\n  \"cwe_id\": \"CWE-89\",\n  \"top_k\": 3\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "10.5 Semantic Search (CWE-78 OS Command Injection)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Response status is valid\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 502, 503]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Internal-RAG-Token",
+                "value": "{{rag_service_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{rag_url}}/v1/search",
+              "host": [
+                "{{rag_url}}"
+              ],
+              "path": [
+                "v1",
+                "search"
+              ]
+            },
+            "description": "Searches OWASP guidance for command execution vulnerabilities.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"subprocess call shell True command injection\",\n  \"cwe_id\": \"CWE-78\",\n  \"top_k\": 3\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "10.6 Semantic Search - Unauthorized Guard (No Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 401 Unauthorized\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{rag_url}}/v1/search",
+              "host": [
+                "{{rag_url}}"
+              ],
+              "path": [
+                "v1",
+                "search"
+              ]
+            },
+            "description": "Guards private RAG search against unauthorized internal callers.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"test without token\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "10.7 Check RAG Index Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const res = pm.response.json();",
+                  "    pm.expect(res).to.have.property(\"collection_name\");",
+                  "    pm.expect(res).to.have.property(\"total_documents\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Internal-RAG-Token",
+                "value": "{{rag_service_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{rag_url}}/v1/index/status",
+              "host": [
+                "{{rag_url}}"
+              ],
+              "path": [
+                "v1",
+                "index",
+                "status"
+              ]
+            },
+            "description": "Returns current document count and collection status from Qdrant."
+          },
+          "response": []
+        },
+        {
+          "name": "10.8 Trigger Knowledge Base Indexing (Batch)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Indexing returns valid status code (200, 202, or 503 if unconfigured)\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 202, 502, 503]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Internal-RAG-Token",
+                "value": "{{rag_service_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{rag_url}}/v1/index",
+              "host": [
+                "{{rag_url}}"
+              ],
+              "path": [
+                "v1",
+                "index"
+              ]
+            },
+            "description": "Indexes a batch of OWASP corpus chunks into Qdrant.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"corpus_url\": \"https://huggingface.co/datasets/OMCHOKSI108/CodeSecAudit-RAG/resolve/main/rag/rag_corpus.jsonl.gz\",\n  \"max_documents\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "11 - Client Next.js Proxy & Frontend Health",
+      "item": [
+        {
+          "name": "11.1 Client Frontend Health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Client health check passes\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(pm.response.json().status).to.eql(\"ok\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{client_url}}/health",
+              "host": [
+                "{{client_url}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "Checks Next.js App Router health check route."
+          },
+          "response": []
+        },
+        {
+          "name": "11.2 Client Frontend Version",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Client version returns 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{client_url}}/version",
+              "host": [
+                "{{client_url}}"
+              ],
+              "path": [
+                "version"
+              ]
+            },
+            "description": "Checks Next.js version route."
+          },
+          "response": []
+        },
+        {
+          "name": "11.3 Client Runtime API Proxy - User Me",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Client proxy forwards request to main-server\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(pm.response.json()).to.have.property(\"username\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "codesec_session={{codesec_session}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{client_url}}/api/auth/me",
+              "host": [
+                "{{client_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Tests the Next.js runtime API proxy forwarding to main-server."
+          },
+          "response": []
+        },
+        {
+          "name": "11.4 Client Runtime API Proxy - Reviews",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Client proxy returns reviews list\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(pm.response.json()).to.be.an(\"array\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "codesec_session={{codesec_session}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{client_url}}/api/reviews",
+              "host": [
+                "{{client_url}}"
+              ],
+              "path": [
+                "api",
+                "reviews"
+              ]
+            },
+            "description": "Tests the Next.js runtime API proxy forwarding for reviews."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "12 - Session Teardown & Logout",
+      "item": [
+        {
+          "name": "12.1 Terminate User Session (Logout)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Logout succeeds (200)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(pm.response.json().message).to.eql(\"Logged out\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "codesec_session={{codesec_session}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{main_url}}/v1/auth/logout",
+              "host": [
+                "{{main_url}}"
+              ],
+              "path": [
+                "v1",
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Invalidates active session token in Redis and removes HttpOnly cookie."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
