@@ -393,38 +393,78 @@ export default function HomePage() {
         <div
           className="card text-left w-full"
           style={{
-            maxWidth: "880px",
+            maxWidth: "920px",
             background: "var(--bg-surface)",
             border: "1px solid var(--border-light)",
             padding: "1.5rem",
+            boxShadow: "var(--shadow-card)",
           }}
         >
-          <div className="flex-between mb-3 pb-2 border-b border-subtle">
-            <div className="flex items-center gap-2">
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: "0.75rem",
+              marginBottom: "1rem",
+              paddingBottom: "0.75rem",
+              borderBottom: "1px solid var(--border-subtle)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "0.65rem", flexWrap: "wrap" }}>
               <span className="badge badge-blocked">BLOCKED BY SECURITY GATE</span>
-              <span className="font-mono text-xs text-muted">PR #482 &bull; payment-api/routes/charge.py</span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.78rem", color: "var(--text-muted)" }}>
+                PR #482 &bull; payment-api/routes/charge.py
+              </span>
             </div>
-            <span className="font-mono text-xs text-dim">AST Taint &bull; CWE-89 (SQL Injection)</span>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", color: "var(--text-dim)", whiteSpace: "nowrap" }}>
+              AST Taint &bull; CWE-89 (SQL Injection)
+            </span>
           </div>
 
-          <div className="grid-2 gap-3 text-xs font-mono">
-            <div>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+              gap: "1rem",
+              width: "100%",
+            }}
+          >
+            <div
+              style={{
+                minWidth: 0,
+                overflow: "hidden",
+                borderRadius: "8px",
+                border: "1px solid var(--border-subtle)",
+              }}
+            >
               <div
-                className="px-2.5 py-1 rounded-t border text-[11px] font-bold"
                 style={{
+                  padding: "0.45rem 0.85rem",
                   backgroundColor: "var(--crit-bg)",
-                  borderColor: "var(--crit-border)",
+                  borderBottom: "1px solid var(--crit-border)",
                   color: "var(--crit-color)",
+                  fontSize: "0.74rem",
+                  fontWeight: 700,
+                  fontFamily: "var(--font-mono)",
                 }}
               >
                 ✕ Vulnerable Source-to-Sink Path (Diff)
               </div>
               <pre
-                className="p-3 rounded-b border overflow-x-auto leading-relaxed"
                 style={{
+                  margin: 0,
+                  padding: "0.85rem 1rem",
                   backgroundColor: "var(--bg-base)",
-                  borderColor: "var(--border-subtle)",
                   color: "var(--crit-color)",
+                  fontSize: "0.78rem",
+                  lineHeight: 1.6,
+                  fontFamily: "var(--font-mono)",
+                  overflowX: "auto",
+                  whiteSpace: "pre",
+                  boxSizing: "border-box",
+                  minWidth: 0,
                 }}
               >
 {`- query = f"SELECT * FROM accounts WHERE id = '{req.args.get('id')}'"
@@ -432,23 +472,40 @@ export default function HomePage() {
               </pre>
             </div>
 
-            <div>
+            <div
+              style={{
+                minWidth: 0,
+                overflow: "hidden",
+                borderRadius: "8px",
+                border: "1px solid var(--border-subtle)",
+              }}
+            >
               <div
-                className="px-2.5 py-1 rounded-t border text-[11px] font-bold"
                 style={{
+                  padding: "0.45rem 0.85rem",
                   backgroundColor: "var(--pass-bg)",
-                  borderColor: "var(--pass-border)",
+                  borderBottom: "1px solid var(--pass-border)",
                   color: "var(--pass-color)",
+                  fontSize: "0.74rem",
+                  fontWeight: 700,
+                  fontFamily: "var(--font-mono)",
                 }}
               >
                 ✓ Recommended OWASP Remediation (Auto-Patch)
               </div>
               <pre
-                className="p-3 rounded-b border overflow-x-auto leading-relaxed"
                 style={{
+                  margin: 0,
+                  padding: "0.85rem 1rem",
                   backgroundColor: "var(--bg-base)",
-                  borderColor: "var(--border-subtle)",
                   color: "var(--pass-color)",
+                  fontSize: "0.78rem",
+                  lineHeight: 1.6,
+                  fontFamily: "var(--font-mono)",
+                  overflowX: "auto",
+                  whiteSpace: "pre",
+                  boxSizing: "border-box",
+                  minWidth: 0,
                 }}
               >
 {`+ query = "SELECT * FROM accounts WHERE id = :account_id"

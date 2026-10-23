@@ -67,7 +67,7 @@ export function FindingDetailContent({ finding, onStatusChange }: Props) {
         actions={<Button variant="secondary" size="sm" onClick={handleCopyFix}>{copied ? "✓ Copied" : "Copy Fix"}</Button>}
       >
         <div className="grid-2 gap-4">
-          <div>
+          <div style={{ minWidth: 0, overflow: "hidden" }}>
             <div className="flex-between px-3 py-1.5 rounded-t border text-xs" style={{ backgroundColor: "var(--crit-bg)", borderColor: "var(--crit-border)", color: "var(--crit-color)" }}>
               <span className="font-semibold">Vulnerable Code</span>
               <span className="font-mono">Line {finding.line_number}</span>
@@ -77,7 +77,7 @@ export function FindingDetailContent({ finding, onStatusChange }: Props) {
             </pre>
           </div>
 
-          <div>
+          <div style={{ minWidth: 0, overflow: "hidden" }}>
             <div className="flex-between px-3 py-1.5 rounded-t border text-xs" style={{ backgroundColor: "var(--pass-bg)", borderColor: "var(--pass-border)", color: "var(--pass-color)" }}>
               <span className="font-semibold">Remediated Fix (OWASP)</span>
               <span>Safe Implementation</span>
