@@ -100,3 +100,39 @@ async def health_worker_status():
         "run_worker_inline": settings.run_worker_inline,
         "recent_jobs": job_list,
     }
+
+
+@router.post("/health/retry-job/{job_id}")
+async def retry_review_job(job_id: str):
+    from sqlalchemy import select
+    from app.db.models.github import GitHubInstallation, Repository
+    from app.db.models.review import ReviewJob
+    from app.db.session import get_session_factory
+    from app.jobs.queue import enqueue_review_job
+
+    factory = get_session_factory()
+    async with factory() as db:
+        stmt = select(ReviewJob).where(ReviewJob.id == job_id)
+        job = (await db.execute(stmt)).scalar_one_or_none()
+        if not job:
+            return {"error": "job not found"}
+
+        repo = (await db.execute(select(Repository).where(Repository.id == job.repository_id))).scalar_one_or_none()
+        inst = (await db.execute(select(GitHubInstallation).where(GitHubInstallation.organization_id == job.organization_id))).scalars().first()
+
+        job.status = "queued"
+        job.error_message = None
+        await db.commit()
+
+        payload = {
+            "job_id": job.id,
+            "organization_id": job.organization_id,
+            "repository_id": job.repository_id,
+            "pr_number": job.pr_number,
+            "commit_sha": job.commit_sha,
+            "is_diff": True,
+            "repo_full_name": repo.full_name if repo else "OMCHOKSI108/CodeSecurityAuditAgent",
+            "installation_id": inst.installation_id if inst else "174581234",
+        }
+        await enqueue_review_job(payload)
+        return {"status": "re-enqueued", "job_id": job.id}

@@ -19,6 +19,11 @@ def _format_private_key(raw_key: str) -> str:
     key = raw_key.strip().strip("\"'").strip()
     if "\\n" in key:
         key = key.replace("\\n", "\n")
+    if "BEGIN" not in key:
+        clean_body = "\n".join(line.strip() for line in key.splitlines() if line.strip())
+        key = f"-----BEGIN RSA PRIVATE KEY-----\n{clean_body}\n-----END RSA PRIVATE KEY-----\n"
+    if not key.endswith("\n"):
+        key += "\n"
     return key
 
 
