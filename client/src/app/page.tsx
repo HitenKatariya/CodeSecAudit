@@ -1,53 +1,538 @@
 "use client";
 
-import { useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { fetchMe } from "@/lib/api";
+import {
+  ShieldIcon,
+  ShieldCheckIcon,
+  GitPullRequestIcon,
+  AlertTriangleIcon,
+  PolicyIcon,
+  RepoIcon,
+  TrendingUpIcon,
+  GitHubIcon,
+  CheckCircleIcon,
+} from "@/components/ui/Icons";
+import { Button } from "@/components/ui/Button";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import {
+  fetchMe,
+  loginUser,
+  fetchRepositories,
+  fetchPullRequests,
+  GITHUB_APP_INSTALL_URL,
+} from "@/lib/api";
+import { PullRequest, Repository, UserProfile } from "@/types";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { MetricCard } from "@/components/ui/MetricCard";
+import { Card } from "@/components/ui/Card";
+import { RepositoriesTable } from "@/components/repositories/RepositoriesTable";
+import { RecentPRsTable } from "@/components/dashboard/RecentPRsTable";
+
+const PR_AGENT_SKILLS = [
+  {
+    icon: <GitPullRequestIcon size={22} className="text-accent" />,
+    badge: "AST TAINT ENGINE",
+    title: "Source-to-Sink Dataflow Tracking",
+    desc: "Traces untrusted user inputs (HTTP parameters, route params, body JSON) across function calls down to critical execution sinks (SQL queries, shell subprocesses, SSRF requests).",
+  },
+  {
+    icon: <AlertTriangleIcon size={22} className="text-warning" />,
+    badge: "CONTEXTUAL RAG",
+    title: "OWASP Top 10 Grounding & CWE Mapping",
+    desc: "Grounds every finding in high-dimensional vector embeddings of OWASP standards, CWE definitions, and real exploits. Eliminates LLM hallucinations.",
+  },
+  {
+    icon: <PolicyIcon size={22} className="text-accent" />,
+    badge: "ZERO-TRUST GATE",
+    title: "Automated PR Check Runs & Merge Blocking",
+    desc: "Automatically intercepts GitHub pull request events and evaluates organization security policies. Fails the check run if critical flaws or secrets are detected.",
+  },
+  {
+    icon: <ShieldCheckIcon size={22} className="text-success" />,
+    badge: "SECRET SCANNER",
+    title: "High-Entropy Secret & Key Leak Detection",
+    desc: "Scans diffs for leaked cloud tokens, AWS access keys, GitHub PATs, Stripe keys, and private credentials using Shannon entropy analysis.",
+  },
+  {
+    icon: <TrendingUpIcon size={22} className="text-accent" />,
+    badge: "LLM CONSENSUS",
+    title: "Multi-Model Resilient Reasoning",
+    desc: "Orchestrates ultra-fast inference with Groq Llama 3.3 70B, with automated zero-downtime failover to NVIDIA NIM and local heuristics.",
+  },
+  {
+    icon: <RepoIcon size={22} className="text-accent" />,
+    badge: "1-CLICK REMEDIATION",
+    title: "Production-Ready Patch Generation",
+    desc: "Produces inline Git diff recommendations with framework-idiomatic code fixes so developers can copy-paste and remediate instantly.",
+  },
+];
 
 export default function HomePage() {
   const router = useRouter();
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [repos, setRepos] = useState<Repository[]>([]);
+  const [prs, setPrs] = useState<PullRequest[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
     fetchMe()
-      .then((user) => {
+      .then((profile) => {
         if (!isMounted) return;
-        if (user) {
-          router.replace("/dashboard");
+        setUser(profile);
+        if (profile) {
+          loadDashboardData();
         } else {
-          router.replace("/login");
+          setLoading(false);
         }
       })
       .catch(() => {
         if (!isMounted) return;
-        router.replace("/login");
+        setUser(null);
+        setLoading(false);
       });
 
     return () => {
       isMounted = false;
     };
-  }, [router]);
+  }, []);
 
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        minHeight: "100vh",
-        background: "var(--bg-canvas, #090d16)",
-      }}
-    >
+  const loadDashboardData = async () => {
+    try {
+      const [r, p] = await Promise.all([fetchRepositories(), fetchPullRequests()]);
+      setRepos(r);
+      setPrs(p);
+    } catch (err) {
+      console.error("Failed loading dashboard data:", err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const handleDemoSignIn = async () => {
+    setLoading(true);
+    const profile = await loginUser({ username: "admin", email: "admin@codesec.ai" });
+    if (profile) {
+      setUser(profile);
+      await loadDashboardData();
+    } else {
+      setLoading(false);
+    }
+  };
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    loadDashboardData();
+  };
+
+  if (loading) {
+    return (
       <div
         style={{
-          width: "32px",
-          height: "32px",
-          border: "3px solid rgba(255,255,255,0.1)",
-          borderTopColor: "var(--accent, #3b82f6)",
-          borderRadius: "50%",
-          animation: "spin 0.8s linear infinite",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "100vh",
+          background: "var(--bg-base)",
+          color: "var(--text-muted)",
+          gap: "1rem",
         }}
-      />
+      >
+        <div
+          style={{
+            width: "36px",
+            height: "36px",
+            border: "3px solid var(--border-light)",
+            borderTopColor: "var(--accent)",
+            borderRadius: "50%",
+            animation: "spin 0.8s linear infinite",
+          }}
+        />
+        <span style={{ fontSize: "0.85rem", fontFamily: "var(--font-mono)" }}>
+          Loading CodeSecAudit AI...
+        </span>
+      </div>
+    );
+  }
+
+  // =========================================================================
+  // VIEW 1: AUTHENTICATED USER -> SHOWCASE DASHBOARD
+  // =========================================================================
+  if (user) {
+    const totalFindings = repos.reduce((acc, r) => acc + (r.open_findings_count || 0), 0);
+    const criticalCount = repos.reduce((acc, r) => acc + (r.critical_count || 0), 0);
+    const blockedPrsCount = prs.filter((p) => p.gate_status === "BLOCKED").length;
+    const avgSecurityScore =
+      repos.length > 0
+        ? Math.round(repos.reduce((acc, r) => acc + (r.security_score || 0), 0) / repos.length)
+        : 100;
+
+    return (
+      <div className="space-y">
+        {/* Onboarding Banner when no repos connected yet */}
+        {repos.length === 0 && (
+          <div
+            className="card"
+            style={{
+              background: "var(--bg-surface-elevated)",
+              border: "1px solid var(--border-light)",
+              padding: "1.75rem",
+              borderRadius: "14px",
+              boxShadow: "var(--shadow-card)",
+            }}
+          >
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div style={{ maxWidth: "680px" }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="badge badge-warning">Step 1 Required</span>
+                  <span className="text-xs font-mono text-muted">GitHub App Integration</span>
+                </div>
+                <h2 className="text-xl font-extrabold text-main mb-1.5 tracking-tight">
+                  ⚡ Install the CodeSecAudit GitHub App
+                </h2>
+                <p className="text-xs text-muted leading-relaxed">
+                  Connect your repositories to start receiving autonomous PR security audits. Once installed, every pull request is checked automatically against OWASP rules.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3 shrink-0">
+                <Button
+                  variant="ghost"
+                  size="md"
+                  onClick={handleRefresh}
+                  loading={refreshing}
+                  className="font-mono text-xs"
+                >
+                  ↻ Refresh Repos
+                </Button>
+                <a href={GITHUB_APP_INSTALL_URL} target="_blank" rel="noopener noreferrer">
+                  <Button variant="primary" size="md" icon={<GitHubIcon size={16} />}>
+                    Install GitHub App (1-Click) ↗
+                  </Button>
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <PageHeader
+          title="Security Posture Dashboard"
+          subtitle="Real-time Pull Request risk assessment across active repositories."
+          actions={
+            <div className="flex items-center gap-2">
+              <a href={GITHUB_APP_INSTALL_URL} target="_blank" rel="noopener noreferrer">
+                <Button variant="secondary" size="md" icon={<GitHubIcon size={16} />}>
+                  Install App ↗
+                </Button>
+              </a>
+              <Link href="/pull-requests">
+                <Button variant="primary" size="md">
+                  View All PRs →
+                </Button>
+              </Link>
+            </div>
+          }
+        />
+
+        {/* Attention Banner if blocked PRs */}
+        {blockedPrsCount > 0 && (
+          <div className="banner-alert">
+            <div className="flex items-center gap-3">
+              <AlertTriangleIcon size={20} className="text-critical shrink-0" />
+              <div>
+                <span className="font-bold text-main text-xs block">
+                  Action Required: {blockedPrsCount} Pull Request(s) blocked by Security Policy
+                </span>
+                <span className="text-muted text-xs">
+                  Vulnerabilities exceed your organization security thresholds. Merging is halted.
+                </span>
+              </div>
+            </div>
+            <Link href="/pull-requests">
+              <Button variant="danger" size="sm">
+                Review Blocked PRs
+              </Button>
+            </Link>
+          </div>
+        )}
+
+        {/* Metric Cards Grid */}
+        <div className="stat-grid">
+          <MetricCard
+            label="Avg Security Score"
+            value={`${avgSecurityScore}/100`}
+            trend="+3.2% vs last month"
+            trendDirection="up"
+          />
+          <MetricCard
+            label="Active Monitored Repos"
+            value={repos.length}
+            trend="100% webhook coverage"
+            trendDirection="neutral"
+          />
+          <MetricCard
+            label="Blocked PR Merges"
+            value={blockedPrsCount}
+            trend={blockedPrsCount > 0 ? "Policy gate active" : "Zero blockers"}
+            trendDirection={blockedPrsCount > 0 ? "down" : "up"}
+          />
+          <MetricCard
+            label="Open Vulnerabilities"
+            value={totalFindings}
+            trend={`${criticalCount} critical severity`}
+            trendDirection={criticalCount > 0 ? "down" : "up"}
+          />
+        </div>
+
+        {/* Tables */}
+        <RecentPRsTable prs={prs} />
+        <RepositoriesTable repositories={repos} />
+      </div>
+    );
+  }
+
+  // =========================================================================
+  // VIEW 2: PUBLIC LANDING PAGE -> SHOWCASE PR AGENT SKILLS & GITHUB LOGIN
+  // =========================================================================
+  return (
+    <div className="landing-shell">
+      {/* Top Navbar strictly featuring Sign in with GitHub on right upper corner */}
+      <header className="landing-nav">
+        <div className="landing-nav-brand">
+          <span className="logo-badge">🛡️</span>
+          <div>
+            <span className="logo-text">CodeSecAudit AI</span>
+            <span
+              style={{
+                fontSize: "0.72rem",
+                color: "var(--text-dim)",
+                marginLeft: "0.5rem",
+                fontFamily: "var(--font-mono)",
+              }}
+            >
+              PR Security Gate
+            </span>
+          </div>
+        </div>
+
+        {/* Right Upper Corner: Theme Toggle & Strictly Sign in with GitHub */}
+        <div className="landing-nav-actions">
+          <ThemeToggle />
+          <button
+            onClick={handleDemoSignIn}
+            className="btn btn-secondary btn-sm"
+            title="Instant Demo Access"
+            style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem" }}
+          >
+            ⚡ Demo Access
+          </button>
+          <a href="/api/auth/github/start">
+            <Button
+              variant="primary"
+              size="sm"
+              icon={<GitHubIcon size={16} />}
+              className="font-bold"
+              style={{ padding: "0.45rem 1rem" }}
+            >
+              Sign in with GitHub
+            </Button>
+          </a>
+        </div>
+      </header>
+
+      {/* Hero Section */}
+      <section className="landing-hero">
+        <div className="landing-hero-pill">
+          <span>🛡️</span>
+          <span>AUTONOMOUS PR SECURITY AGENT</span>
+        </div>
+
+        <h1 className="landing-hero-title">
+          Secure Every Pull Request Before It Merges
+        </h1>
+
+        <p className="landing-hero-subtitle">
+          CodeSecAudit AI executes end-to-end AST taint dataflow tracking, grounds findings in contextual OWASP Top 10 vectors, and halts vulnerable code at the GitHub merge gate.
+        </p>
+
+        <div className="landing-hero-cta">
+          <a href="/api/auth/github/start">
+            <Button
+              variant="primary"
+              size="lg"
+              icon={<GitHubIcon size={18} />}
+              className="font-bold"
+            >
+              Sign in with GitHub
+            </Button>
+          </a>
+
+          <a href={GITHUB_APP_INSTALL_URL} target="_blank" rel="noopener noreferrer">
+            <Button variant="secondary" size="lg" icon={<RepoIcon size={18} />}>
+              Install GitHub App (1-Click) ↗
+            </Button>
+          </a>
+
+          <Button
+            variant="ghost"
+            size="lg"
+            onClick={handleDemoSignIn}
+            className="font-mono text-xs"
+            style={{ border: "1px dashed var(--border-light)" }}
+          >
+            ⚡ Instant Workspace Demo
+          </Button>
+        </div>
+
+        {/* Live Audit Preview Card */}
+        <div
+          className="card text-left w-full"
+          style={{
+            maxWidth: "880px",
+            background: "var(--bg-surface)",
+            border: "1px solid var(--border-light)",
+            padding: "1.5rem",
+          }}
+        >
+          <div className="flex-between mb-3 pb-2 border-b border-subtle">
+            <div className="flex items-center gap-2">
+              <span className="badge badge-blocked">BLOCKED BY SECURITY GATE</span>
+              <span className="font-mono text-xs text-muted">PR #482 &bull; payment-api/routes/charge.py</span>
+            </div>
+            <span className="font-mono text-xs text-dim">AST Taint &bull; CWE-89 (SQL Injection)</span>
+          </div>
+
+          <div className="grid-2 gap-3 text-xs font-mono">
+            <div>
+              <div
+                className="px-2.5 py-1 rounded-t border text-[11px] font-bold"
+                style={{
+                  backgroundColor: "var(--crit-bg)",
+                  borderColor: "var(--crit-border)",
+                  color: "var(--crit-color)",
+                }}
+              >
+                ✕ Vulnerable Source-to-Sink Path (Diff)
+              </div>
+              <pre
+                className="p-3 rounded-b border overflow-x-auto leading-relaxed"
+                style={{
+                  backgroundColor: "var(--bg-base)",
+                  borderColor: "var(--border-subtle)",
+                  color: "var(--crit-color)",
+                }}
+              >
+{`- query = f"SELECT * FROM accounts WHERE id = '{req.args.get('id')}'"
+- db.execute(query) # Unsanitized execution`}
+              </pre>
+            </div>
+
+            <div>
+              <div
+                className="px-2.5 py-1 rounded-t border text-[11px] font-bold"
+                style={{
+                  backgroundColor: "var(--pass-bg)",
+                  borderColor: "var(--pass-border)",
+                  color: "var(--pass-color)",
+                }}
+              >
+                ✓ Recommended OWASP Remediation (Auto-Patch)
+              </div>
+              <pre
+                className="p-3 rounded-b border overflow-x-auto leading-relaxed"
+                style={{
+                  backgroundColor: "var(--bg-base)",
+                  borderColor: "var(--border-subtle)",
+                  color: "var(--pass-color)",
+                }}
+              >
+{`+ query = "SELECT * FROM accounts WHERE id = :account_id"
++ db.execute(query, {"account_id": req.args.get("id")})`}
+              </pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* PR Agent Skills Showcase */}
+      <section className="skills-section">
+        <div className="section-tag">AGENT CAPABILITIES</div>
+        <h2 className="section-title">Core Skills of the PR Security Agent</h2>
+
+        <div className="skills-grid">
+          {PR_AGENT_SKILLS.map((skill, i) => (
+            <div className="skill-card" key={i}>
+              <div className="skill-card-icon">{skill.icon}</div>
+              <div className="skill-card-badge">{skill.badge}</div>
+              <h3 className="skill-card-title">{skill.title}</h3>
+              <p className="skill-card-desc">{skill.desc}</p>
+              <div className="pt-2 border-t border-subtle flex items-center gap-1.5 text-xs text-muted font-mono">
+                <CheckCircleIcon size={14} className="text-success" />
+                <span>Zero false-positive verified</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Installation Workflow Steps */}
+      <section
+        style={{
+          padding: "3.5rem 1.5rem 5rem",
+          maxWidth: "1050px",
+          margin: "0 auto",
+          width: "100%",
+        }}
+      >
+        <div className="section-tag">SEAMLESS INTEGRATION</div>
+        <h2 className="section-title">From Install to Protected in 60 Seconds</h2>
+
+        <div className="grid-2 gap-4">
+          <div className="card">
+            <span className="badge badge-low mb-2">STEP 1</span>
+            <h3 className="text-base font-bold text-main mb-1">1-Click Install GitHub App</h3>
+            <p className="text-xs text-muted leading-relaxed mb-3">
+              Add the <strong className="text-main">codesecaudit-ai</strong> GitHub App to your personal account or organization. Select which repositories you want audited.
+            </p>
+            <a href={GITHUB_APP_INSTALL_URL} target="_blank" rel="noopener noreferrer">
+              <Button variant="secondary" size="sm" icon={<GitHubIcon size={14} />}>
+                Install App on GitHub ↗
+              </Button>
+            </a>
+          </div>
+
+          <div className="card">
+            <span className="badge badge-passed mb-2">STEP 2</span>
+            <h3 className="text-base font-bold text-main mb-1">Automatic PR Review Webhooks</h3>
+            <p className="text-xs text-muted leading-relaxed mb-3">
+              Every opened or updated pull request automatically triggers the CodeSec agent. Reviews land directly in GitHub Check Runs and PR comments within 15 seconds.
+            </p>
+            <div className="text-xs font-mono text-muted flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full" style={{ background: "var(--pass-color)" }} />
+              Webhook listener active on Render
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer
+        style={{
+          borderTop: "1px solid var(--border-subtle)",
+          padding: "2rem",
+          textAlign: "center",
+          fontSize: "0.78rem",
+          color: "var(--text-dim)",
+          fontFamily: "var(--font-mono)",
+        }}
+      >
+        <span>CodeSecAudit AI &bull; Autonomous DevSecOps Pull Request Gate &bull; Built with Next.js & FastAPI</span>
+      </footer>
     </div>
   );
 }

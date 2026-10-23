@@ -12,28 +12,26 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(pathname !== "/login");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (pathname === "/login") {
-      setLoading(false);
-      return;
-    }
-
     let isMounted = true;
     fetchMe()
       .then((profile) => {
         if (!isMounted) return;
-        if (!profile) {
+        setUser(profile);
+        setLoading(false);
+        if (!profile && pathname !== "/login" && pathname !== "/") {
           router.replace("/login");
-        } else {
-          setUser(profile);
-          setLoading(false);
         }
       })
       .catch(() => {
         if (!isMounted) return;
-        router.replace("/login");
+        setUser(null);
+        setLoading(false);
+        if (pathname !== "/login" && pathname !== "/") {
+          router.replace("/login");
+        }
       });
 
     return () => {
@@ -44,7 +42,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const handleSignOut = async () => {
     await logoutUser();
     setUser(null);
-    router.replace("/login");
+    router.replace("/");
   };
 
   // On login route, render standalone auth container with fixed theme toggle
@@ -57,6 +55,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         {children}
       </main>
     );
+  }
+
+  // On home landing route when unauthenticated, render public landing container without sidebar
+  if (pathname === "/" && !user && !loading) {
+    return <main className="landing-shell">{children}</main>;
   }
 
   if (loading) {
