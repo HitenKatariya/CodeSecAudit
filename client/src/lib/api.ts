@@ -11,6 +11,10 @@ import {
   UserProfile,
 } from "@/types";
 
+export const GITHUB_APP_NAME =
+  process.env.NEXT_PUBLIC_GITHUB_APP_NAME || "codesecaudit-ai";
+export const GITHUB_APP_INSTALL_URL = `https://github.com/apps/${GITHUB_APP_NAME}/installations/new`;
+
 export async function fetchMe(): Promise<UserProfile | null> {
   try {
     const res = await fetch("/api/auth/me", { credentials: "include" });

@@ -3,13 +3,14 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { PullRequest, Repository } from "@/types";
-import { fetchPullRequests, fetchRepositories } from "@/lib/api";
+import { fetchPullRequests, fetchRepositories, GITHUB_APP_INSTALL_URL } from "@/lib/api";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { RepositoriesTable } from "@/components/repositories/RepositoriesTable";
 import { RecentPRsTable } from "@/components/dashboard/RecentPRsTable";
+import { GitHubIcon } from "@/components/ui/Icons";
 
 export default function DashboardPage() {
   const [repos, setRepos] = useState<Repository[]>([]);
@@ -46,13 +47,79 @@ export default function DashboardPage() {
         title="Security Posture Dashboard"
         subtitle="Real-time Pull Request risk assessment across active repositories."
         actions={
-          <Link href="/pull-requests">
-            <Button variant="primary" size="md">
-              View All Pull Requests →
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <a href={GITHUB_APP_INSTALL_URL} target="_blank" rel="noopener noreferrer">
+              <Button variant="secondary" size="md" icon={<GitHubIcon size={16} />}>
+                Install GitHub App ↗
+              </Button>
+            </a>
+            <Link href="/pull-requests">
+              <Button variant="primary" size="md">
+                View All Pull Requests →
+              </Button>
+            </Link>
+          </div>
         }
       />
+
+      {/* GitHub App 1-Click Install Onboarding Card */}
+      {!loading && repos.length === 0 && (
+        <div
+          style={{
+            padding: "1.5rem",
+            borderRadius: "12px",
+            background: "linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(37, 99, 235, 0.05) 100%)",
+            border: "1px solid rgba(59, 130, 246, 0.3)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: "1.25rem",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "flex-start", gap: "1rem", maxWidth: "680px" }}>
+            <div
+              style={{
+                width: "48px",
+                height: "48px",
+                borderRadius: "10px",
+                background: "rgba(59, 130, 246, 0.2)",
+                color: "var(--accent, #3b82f6)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <GitHubIcon size={26} />
+            </div>
+            <div>
+              <div style={{ fontSize: "1.15rem", fontWeight: 700, color: "var(--text-main, #f8fafc)" }}>
+                Install GitHub App to Start PR Security Audits
+              </div>
+              <div style={{ fontSize: "0.85rem", color: "var(--text-muted, #94a3b8)", marginTop: "0.35rem", lineHeight: "1.5" }}>
+                CodeSecAudit AI is ready. Install the GitHub App on your repositories to activate automatic AST taint analysis, OWASP RAG guidance, and inline PR security comments.
+              </div>
+            </div>
+          </div>
+
+          <a
+            href={GITHUB_APP_INSTALL_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ textDecoration: "none" }}
+          >
+            <Button
+              variant="primary"
+              size="lg"
+              className="font-bold"
+              icon={<GitHubIcon size={18} />}
+            >
+              ⚡ 1-Click Install GitHub App
+            </Button>
+          </a>
+        </div>
+      )}
 
       {/* Immediate Attention Callout */}
       {criticalCount > 0 ? (
