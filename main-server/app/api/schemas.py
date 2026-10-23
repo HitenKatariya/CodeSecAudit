@@ -27,6 +27,8 @@ class UserMeResponse(BaseModel):
     active_organization_id: str
     organization_name: str
     organization_role: str
+    is_installed: bool = False
+
 
 
 class LoginRequest(BaseModel):

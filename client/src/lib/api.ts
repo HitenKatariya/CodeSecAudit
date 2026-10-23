@@ -51,6 +51,9 @@ export async function loginUser(credentials?: {
 
 export async function logoutUser(): Promise<boolean> {
   try {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("codesec_app_installed");
+    }
     const res = await fetch("/api/auth/logout", {
       method: "POST",
       credentials: "include",
@@ -61,6 +64,7 @@ export async function logoutUser(): Promise<boolean> {
     return false;
   }
 }
+
 
 export async function fetchReviews(): Promise<ReviewRecord[]> {
   try {

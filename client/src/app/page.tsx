@@ -76,6 +76,7 @@ export default function HomePage() {
   const [repos, setRepos] = useState<Repository[]>([]);
   const [prs, setPrs] = useState<PullRequest[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -85,6 +86,12 @@ export default function HomePage() {
         setUser(profile);
         if (profile) {
           loadDashboardData();
+          if (profile.is_installed) {
+            setIsInstalled(true);
+            if (typeof window !== "undefined") {
+              localStorage.setItem("codesec_app_installed", "true");
+            }
+          }
         } else {
           setLoading(false);
         }
@@ -99,6 +106,21 @@ export default function HomePage() {
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      const fromUrl = urlParams.get("installed") === "true";
+      const fromStorage = localStorage.getItem("codesec_app_installed") === "true";
+      if (fromUrl || fromStorage || user?.is_installed || repos.length > 0) {
+        setIsInstalled(true);
+        localStorage.setItem("codesec_app_installed", "true");
+      }
+    } else if (user?.is_installed || repos.length > 0) {
+      setIsInstalled(true);
+    }
+  }, [user, repos]);
+
 
   const loadDashboardData = async () => {
     try {
@@ -174,8 +196,8 @@ export default function HomePage() {
 
     return (
       <div className="space-y">
-        {/* Onboarding Banner when no repos connected yet */}
-        {repos.length === 0 && (
+        {/* Onboarding Banner only when app is NOT installed and no repos connected */}
+        {!isInstalled && repos.length === 0 && (
           <div
             className="card"
             style={{
@@ -220,16 +242,77 @@ export default function HomePage() {
           </div>
         )}
 
+        {/* When app is installed but waiting for first repo audit */}
+        {isInstalled && repos.length === 0 && (
+          <div
+            className="card"
+            style={{
+              background: "var(--bg-surface-elevated)",
+              border: "1px solid var(--border-light)",
+              padding: "1.5rem",
+              borderRadius: "14px",
+              boxShadow: "var(--shadow-card)",
+            }}
+          >
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div
+                  style={{
+                    width: "42px",
+                    height: "42px",
+                    borderRadius: "10px",
+                    background: "rgba(16, 185, 129, 0.15)",
+                    color: "var(--color-success, #10b981)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <CheckCircleIcon size={24} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="badge badge-passed">GitHub App Installed &amp; Active</span>
+                    <span className="text-xs font-mono text-muted">Awaiting Pull Requests</span>
+                  </div>
+                  <p className="text-xs text-muted leading-relaxed">
+                    CodeSecAudit AI is connected to your GitHub account. Open or synchronize a Pull Request in your repositories to trigger automatic AST taint analysis, OWASP RAG checks, and inline security comments.
+                  </p>
+                </div>
+              </div>
+
+              <Button
+                variant="ghost"
+                size="md"
+                onClick={handleRefresh}
+                loading={refreshing}
+                className="font-mono text-xs shrink-0"
+              >
+                ↻ Refresh Status
+              </Button>
+            </div>
+          </div>
+        )}
+
         <PageHeader
           title="Security Posture Dashboard"
           subtitle="Real-time Pull Request risk assessment across active repositories."
           actions={
             <div className="flex items-center gap-2">
-              <a href={GITHUB_APP_INSTALL_URL} target="_blank" rel="noopener noreferrer">
-                <Button variant="secondary" size="md" icon={<GitHubIcon size={16} />}>
-                  Install App ↗
-                </Button>
-              </a>
+              {!isInstalled && repos.length === 0 && (
+                <a href={GITHUB_APP_INSTALL_URL} target="_blank" rel="noopener noreferrer">
+                  <Button variant="secondary" size="md" icon={<GitHubIcon size={16} />}>
+                    Install App ↗
+                  </Button>
+                </a>
+              )}
+              {isInstalled && (
+                <span className="badge badge-passed text-xs font-mono py-1.5 px-3 flex items-center gap-1.5">
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "currentColor", display: "inline-block" }} />
+                  App Active
+                </span>
+              )}
               <Link href="/pull-requests">
                 <Button variant="primary" size="md">
                   View All PRs →
@@ -238,6 +321,7 @@ export default function HomePage() {
             </div>
           }
         />
+
 
         {/* Attention Banner if blocked PRs */}
         {blockedPrsCount > 0 && (
@@ -372,11 +456,21 @@ export default function HomePage() {
             </Button>
           </a>
 
-          <a href={GITHUB_APP_INSTALL_URL} target="_blank" rel="noopener noreferrer">
-            <Button variant="secondary" size="lg" icon={<RepoIcon size={18} />}>
-              Install GitHub App (1-Click) ↗
-            </Button>
-          </a>
+          {!isInstalled && (
+            <a href={GITHUB_APP_INSTALL_URL} target="_blank" rel="noopener noreferrer">
+              <Button variant="secondary" size="lg" icon={<RepoIcon size={18} />}>
+                Install GitHub App (1-Click) ↗
+              </Button>
+            </a>
+          )}
+          {isInstalled && (
+            <Link href="/dashboard">
+              <Button variant="secondary" size="lg" icon={<CheckCircleIcon size={18} className="text-success" />}>
+                Go to Dashboard →
+              </Button>
+            </Link>
+          )}
+
 
           <Button
             variant="ghost"
@@ -556,11 +650,20 @@ export default function HomePage() {
             <p className="text-xs text-muted leading-relaxed mb-3">
               Add the <strong className="text-main">codesecaudit-ai</strong> GitHub App to your personal account or organization. Select which repositories you want audited.
             </p>
-            <a href={GITHUB_APP_INSTALL_URL} target="_blank" rel="noopener noreferrer">
-              <Button variant="secondary" size="sm" icon={<GitHubIcon size={14} />}>
-                Install App on GitHub ↗
-              </Button>
-            </a>
+            {!isInstalled && (
+              <a href={GITHUB_APP_INSTALL_URL} target="_blank" rel="noopener noreferrer">
+                <Button variant="secondary" size="sm" icon={<GitHubIcon size={14} />}>
+                  Install App on GitHub ↗
+                </Button>
+              </a>
+            )}
+            {isInstalled && (
+              <div className="text-xs font-mono text-success flex items-center gap-1.5 font-bold">
+                <CheckCircleIcon size={14} />
+                Installed &amp; Active
+              </div>
+            )}
+
           </div>
 
           <div className="card">

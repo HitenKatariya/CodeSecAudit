@@ -3,25 +3,42 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { PullRequest, Repository } from "@/types";
-import { fetchPullRequests, fetchRepositories, GITHUB_APP_INSTALL_URL } from "@/lib/api";
+import { fetchMe, fetchPullRequests, fetchRepositories, GITHUB_APP_INSTALL_URL } from "@/lib/api";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { RepositoriesTable } from "@/components/repositories/RepositoriesTable";
 import { RecentPRsTable } from "@/components/dashboard/RecentPRsTable";
-import { GitHubIcon } from "@/components/ui/Icons";
+import { CheckCircleIcon, GitHubIcon } from "@/components/ui/Icons";
 
 export default function DashboardPage() {
   const [repos, setRepos] = useState<Repository[]>([]);
   const [prs, setPrs] = useState<PullRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
-    Promise.all([fetchRepositories(), fetchPullRequests()])
-      .then(([r, p]) => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const fromUrl = params.get("installed") === "true";
+      const fromStorage = localStorage.getItem("codesec_app_installed") === "true";
+      if (fromUrl || fromStorage) {
+        setIsInstalled(true);
+        localStorage.setItem("codesec_app_installed", "true");
+      }
+    }
+
+    Promise.all([fetchRepositories(), fetchPullRequests(), fetchMe()])
+      .then(([r, p, me]) => {
         setRepos(r);
         setPrs(p);
+        if (me?.is_installed || r.length > 0) {
+          setIsInstalled(true);
+          if (typeof window !== "undefined") {
+            localStorage.setItem("codesec_app_installed", "true");
+          }
+        }
       })
       .finally(() => setLoading(false));
   }, []);
@@ -48,11 +65,19 @@ export default function DashboardPage() {
         subtitle="Real-time Pull Request risk assessment across active repositories."
         actions={
           <div className="flex items-center gap-2">
-            <a href={GITHUB_APP_INSTALL_URL} target="_blank" rel="noopener noreferrer">
-              <Button variant="secondary" size="md" icon={<GitHubIcon size={16} />}>
-                Install GitHub App ↗
-              </Button>
-            </a>
+            {!isInstalled && repos.length === 0 && (
+              <a href={GITHUB_APP_INSTALL_URL} target="_blank" rel="noopener noreferrer">
+                <Button variant="secondary" size="md" icon={<GitHubIcon size={16} />}>
+                  Install GitHub App ↗
+                </Button>
+              </a>
+            )}
+            {isInstalled && (
+              <span className="badge badge-passed text-xs font-mono py-1.5 px-3 flex items-center gap-1.5">
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "currentColor", display: "inline-block" }} />
+                App Active
+              </span>
+            )}
             <Link href="/pull-requests">
               <Button variant="primary" size="md">
                 View All Pull Requests →
@@ -62,8 +87,8 @@ export default function DashboardPage() {
         }
       />
 
-      {/* GitHub App 1-Click Install Onboarding Card */}
-      {!loading && repos.length === 0 && (
+      {/* GitHub App 1-Click Install Onboarding Card - ONLY if NOT installed */}
+      {!loading && !isInstalled && repos.length === 0 && (
         <div
           style={{
             padding: "1.5rem",
@@ -120,6 +145,44 @@ export default function DashboardPage() {
           </a>
         </div>
       )}
+
+      {/* GitHub App Connected Banner when waiting for first PR */}
+      {!loading && isInstalled && repos.length === 0 && (
+        <div
+          style={{
+            padding: "1.25rem 1.5rem",
+            borderRadius: "12px",
+            background: "var(--bg-surface-elevated)",
+            border: "1px solid var(--border-light)",
+            display: "flex",
+            alignItems: "center",
+            gap: "1rem",
+          }}
+        >
+          <div
+            style={{
+              width: "40px",
+              height: "40px",
+              borderRadius: "10px",
+              background: "rgba(16, 185, 129, 0.15)",
+              color: "var(--color-success, #10b981)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <CheckCircleIcon size={22} />
+          </div>
+          <div>
+            <div className="font-bold text-main text-sm">GitHub App Installed &amp; Active</div>
+            <div className="text-xs text-muted mt-0.5">
+              CodeSecAudit AI is watching your repositories. Open a Pull Request in GitHub to receive automatic PR security audits.
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {/* Immediate Attention Callout */}
       {criticalCount > 0 ? (

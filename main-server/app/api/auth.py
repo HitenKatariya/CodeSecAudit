@@ -301,6 +301,10 @@ async def login(
 
     await db.commit()
 
+    # Check if GitHub App is installed for this organization
+    inst_stmt = select(GitHubInstallation).where(GitHubInstallation.organization_id == org_id)
+    has_install = (await db.execute(inst_stmt)).first() is not None
+
     # Create session token in Redis and set HttpOnly cookie
     await create_user_session(response, user.id, org_id)
 
@@ -314,6 +318,7 @@ async def login(
         active_organization_id=org_id,
         organization_name=org_title,
         organization_role=org_role,
+        is_installed=has_install,
     )
 
 
@@ -367,7 +372,13 @@ async def logout(
 
 
 @router.get("/me", response_model=UserMeResponse, tags=["Current User"])
-async def get_me(tenant: TenantContext = Depends(get_tenant_context)):
+async def get_me(
+    tenant: TenantContext = Depends(get_tenant_context),
+    db: AsyncSession = Depends(get_db),
+):
+    inst_stmt = select(GitHubInstallation).where(GitHubInstallation.organization_id == tenant.organization.id)
+    has_install = (await db.execute(inst_stmt)).first() is not None
+
     return UserMeResponse(
         id=tenant.user.id,
         github_id=tenant.user.github_id,
@@ -378,4 +389,6 @@ async def get_me(tenant: TenantContext = Depends(get_tenant_context)):
         active_organization_id=tenant.organization.id,
         organization_name=tenant.organization.name,
         organization_role=tenant.role,
+        is_installed=has_install,
     )
+

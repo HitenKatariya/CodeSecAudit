@@ -12,7 +12,9 @@ export interface UserProfile {
   active_organization_id: string;
   organization_name: string;
   organization_role: string;
+  is_installed?: boolean;
 }
+
 
 export interface Finding {
   id: string;
