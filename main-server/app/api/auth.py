@@ -217,7 +217,7 @@ async def demo_login(
     db: AsyncSession = Depends(get_db),
 ):
     """Convenience alias for demo/direct login."""
-    req = payload or LoginRequest(username="HitenKatariya", email="hitenvk22@gmail.com")
+    req = payload or LoginRequest(username="omchoksi", email="om@codesec.ai")
     return await login(payload=req, request=request, response=response, db=db)
 
 

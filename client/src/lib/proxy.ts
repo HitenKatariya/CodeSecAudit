@@ -1,13 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
 
 function normalizeBase(value: string | undefined, fallback: string): string {
-  const raw = (value || fallback).trim();
-  const withScheme = /^https?:\/\//i.test(raw) ? raw : `http://${raw}`;
-  return withScheme.replace(/\/+$/, "");
+  let raw = (value || fallback).trim();
+  // On Render Free tier, web services do not have private DNS networking.
+  // If Render's blueprint injected internal 'codesec-main:10000', rewrite to public URL.
+  if (
+    raw === "codesec-main:10000" ||
+    raw === "codesec-main" ||
+    raw === "http://codesec-main:10000" ||
+    raw === "http://codesec-main"
+  ) {
+    return "https://codesec-main.onrender.com";
+  }
+  if (/^https?:\/\//i.test(raw)) {
+    return raw.replace(/\/+$/, "");
+  }
+  if (
+    raw.includes(".") &&
+    !raw.startsWith("127.") &&
+    !raw.startsWith("172.") &&
+    !raw.startsWith("192.") &&
+    !raw.includes("localhost")
+  ) {
+    return `https://${raw}`.replace(/\/+$/, "");
+  }
+  return `http://${raw}`.replace(/\/+$/, "");
 }
 
 export function mainServerBase(): string {
-  return normalizeBase(process.env.MAIN_SERVER_URL, "http://main-server:8000");
+  const fallback =
+    process.env.NODE_ENV === "production"
+      ? "https://codesec-main.onrender.com"
+      : "http://main-server:8000";
+  return normalizeBase(process.env.MAIN_SERVER_URL, fallback);
 }
 
 /**

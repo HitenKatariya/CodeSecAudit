@@ -82,15 +82,26 @@ class Settings(BaseSettings):
     @classmethod
     def _ensure_internal_scheme(cls, value: str) -> str:
         """Render's fromService hostport property has no scheme; add one."""
-        if isinstance(value, str) and value and not value.startswith(("http://", "https://")):
-            return f"http://{value}"
+        if isinstance(value, str) and value:
+            clean = value.strip().lower()
+            if clean.startswith("codesec-main") or clean == "codesec-main:10000":
+                return "https://codesec-main.onrender.com"
+            if clean.startswith("codesec-rag") or clean == "codesec-rag:10000":
+                return "https://codesec-rag.onrender.com"
+            if not value.startswith(("http://", "https://")):
+                return f"http://{value}"
         return value
 
     @field_validator("next_public_app_url", "oauth_redirect_uri", mode="before")
     @classmethod
     def _ensure_public_scheme(cls, value: str) -> str:
         """Public URLs are HTTPS unless they point at localhost."""
-        if not isinstance(value, str) or not value or value.startswith(("http://", "https://")):
+        if not isinstance(value, str) or not value:
+            return value
+        clean = value.strip().lower()
+        if clean.startswith("codesec-client") or clean == "codesec-client:10000":
+            return "https://codesec-client.onrender.com"
+        if value.startswith(("http://", "https://")):
             return value
         host = value.split("/", 1)[0].split(":", 1)[0]
         scheme = "http" if host in {"localhost", "127.0.0.1", "::1"} else "https"

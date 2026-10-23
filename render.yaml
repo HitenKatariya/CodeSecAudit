@@ -53,20 +53,11 @@ services:
           property: hostport
       - key: RAG_SERVICE_TOKEN
         sync: false
-      # Public URL of codesec-client, resolved automatically within this
-      # Blueprint - app/core/config.py's _ensure_public_scheme validator
-      # adds https:// to the bare hostport Render returns here.
+      # Public URL of codesec-client on Render
       - key: NEXT_PUBLIC_APP_URL
-        fromService:
-          name: codesec-client
-          type: web
-          property: hostport
-      # Leave unset to auto-derive from NEXT_PUBLIC_APP_URL + /api/auth/github/callback
-      # (app/core/config.py:github_oauth_redirect_uri) - the client's proxy
-      # route, so the session cookie lands on the client origin. Only set
-      # this explicitly if the client ever moves off this Blueprint (e.g. Vercel).
+        value: https://codesec-client.onrender.com
       - key: OAUTH_REDIRECT_URI
-        sync: false
+        value: https://codesec-client.onrender.com/api/auth/github/callback
       - key: RUN_WORKER_INLINE
         value: "true"
       - key: GITHUB_CLIENT_ID
@@ -157,10 +148,7 @@ services:
     autoDeploy: true
     envVars:
       - key: MAIN_SERVER_URL
-        fromService:
-          name: codesec-main
-          type: web
-          property: hostport
+        value: https://codesec-main.onrender.com
 
   # Render Key Value instances live in `services`, not `databases`.
   # ipAllowList: [] keeps it private (internal connections only).

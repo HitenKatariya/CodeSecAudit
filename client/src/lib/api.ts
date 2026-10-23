@@ -34,7 +34,7 @@ export async function loginUser(credentials?: {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify(credentials || { username: "HitenKatariya" }),
+      body: JSON.stringify(credentials || { username: "omchoksi" }),
     });
     if (res.ok) {
       return await res.json();

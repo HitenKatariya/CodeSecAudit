@@ -30,8 +30,8 @@ class UserMeResponse(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    username: str = "HitenKatariya"
-    email: Optional[str] = None
+    username: str = "omchoksi"
+    email: Optional[str] = "om@codesec.ai"
     organization_name: Optional[str] = None
 
 

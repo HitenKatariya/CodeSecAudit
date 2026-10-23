@@ -32,8 +32,8 @@ const FEATURES = [
 
 export default function LoginPage() {
   const router = useRouter();
-  const [username, setUsername] = useState("HitenKatariya");
-  const [email, setEmail] = useState("hitenvk22@gmail.com");
+  const [username, setUsername] = useState("omchoksi");
+  const [email, setEmail] = useState("om@codesec.ai");
   const [loading, setLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
   const [error, setError] = useState<string | null>(null);
