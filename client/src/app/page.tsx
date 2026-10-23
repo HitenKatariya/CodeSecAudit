@@ -77,6 +77,21 @@ export default function HomePage() {
   const [prs, setPrs] = useState<PullRequest[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [accountDeletedBanner, setAccountDeletedBanner] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const p = new URLSearchParams(window.location.search);
+      if (p.get("deleted") === "true") {
+        setAccountDeletedBanner(true);
+        setIsInstalled(false);
+        setUser(null);
+        setRepos([]);
+        setPrs([]);
+        localStorage.clear();
+      }
+    }
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -385,6 +400,35 @@ export default function HomePage() {
   // =========================================================================
   return (
     <div className="landing-shell">
+      {/* Account Deletion Confirmation Banner */}
+      {accountDeletedBanner && (
+        <div
+          style={{
+            backgroundColor: "var(--pass-bg)",
+            borderBottom: "1px solid var(--pass-border)",
+            color: "var(--pass-color)",
+            padding: "0.85rem 1.5rem",
+            textAlign: "center",
+            fontSize: "0.84rem",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "0.5rem",
+          }}
+        >
+          <span>✓</span>
+          <span>
+            <strong>Account Successfully Deleted:</strong> Your account, GitHub App installation, and all security data have been wiped out cleanly. You can install fresh anytime!
+          </span>
+          <button
+            onClick={() => setAccountDeletedBanner(false)}
+            style={{ marginLeft: "1rem", background: "none", border: "none", color: "inherit", cursor: "pointer", fontWeight: "bold" }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Top Navbar strictly featuring Sign in with GitHub on right upper corner */}
       <header className="landing-nav">
         <div className="landing-nav-brand">
@@ -429,19 +473,19 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* Hero Section */}
+      {/* Hero Section with Punchy Ragebait Hooks */}
       <section className="landing-hero">
-        <div className="landing-hero-pill">
-          <span>🛡️</span>
-          <span>AUTONOMOUS PR SECURITY AGENT</span>
+        <div className="landing-hero-pill" style={{ borderColor: "rgba(239, 68, 68, 0.4)", color: "var(--crit-color)" }}>
+          <span>🚨</span>
+          <span>STILL TRUSTING &ldquo;LGTM 👍&rdquo;? ENJOY YOUR 3 AM BREACH NOTIFICATION.</span>
         </div>
 
         <h1 className="landing-hero-title">
-          Secure Every Pull Request Before It Merges
+          Stop Merging 80 IQ Pull Requests Into Production
         </h1>
 
         <p className="landing-hero-subtitle">
-          CodeSecAudit AI executes end-to-end AST taint dataflow tracking, grounds findings in contextual OWASP Top 10 vectors, and halts vulnerable code at the GitHub merge gate.
+          Your peer review spent 20 minutes bikeshedding trailing commas while a subprocess shell injection and SQL concatenation slipped straight into main. CodeSecAudit AI blocks the merge in 8 seconds with authentic CVSS 0–10 severity scoring.
         </p>
 
         <div className="landing-hero-cta">
@@ -606,6 +650,41 @@ export default function HomePage() {
 + db.execute(query, {"account_id": req.args.get("id")})`}
               </pre>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Ragebait Reality Check Section */}
+      <section style={{ maxWidth: "1050px", margin: "2.5rem auto 1rem", padding: "0 1.5rem", width: "100%" }}>
+        <div className="section-tag" style={{ color: "var(--crit-color)" }}>REALITY CHECK</div>
+        <h2 className="section-title">Why Your Current PR Reviews Are an Incident Waiting to Happen</h2>
+        
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1.25rem", marginTop: "1.5rem" }}>
+          <div className="card" style={{ borderColor: "var(--border-subtle)" }}>
+            <span style={{ fontSize: "1.5rem", display: "block", marginBottom: "0.5rem" }}>😴</span>
+            <span className="badge badge-warning mb-2">THE TIRED SENIOR DEV</span>
+            <h3 className="text-sm font-bold text-main mb-1.5">&ldquo;LGTM, ship it! 🚀&rdquo;</h3>
+            <p className="text-xs text-muted leading-relaxed">
+              Glanced at an 800-line diff on Friday at 5:42 PM. Scrolled to the bottom in 8 seconds, approved it to beat weekend traffic, and accidentally authorized remote code execution.
+            </p>
+          </div>
+
+          <div className="card" style={{ borderColor: "var(--border-subtle)" }}>
+            <span style={{ fontSize: "1.5rem", display: "block", marginBottom: "0.5rem" }}>🐇</span>
+            <span className="badge badge-low mb-2">THE FLUFF AI REVIEWER</span>
+            <h3 className="text-sm font-bold text-main mb-1.5">&ldquo;Consider renaming variable `x` to `counter`&rdquo;</h3>
+            <p className="text-xs text-muted leading-relaxed">
+              Spams your PR with 15 essays about PEP8 style guides and docstring formatting, while completely missing <code className="text-crit font-mono">cursor.execute(&quot;SELECT * &quot; + id)</code> on line 39. Peak noise, zero security.
+            </p>
+          </div>
+
+          <div className="card" style={{ borderColor: "var(--accent)", backgroundColor: "var(--accent-glow)" }}>
+            <span style={{ fontSize: "1.5rem", display: "block", marginBottom: "0.5rem" }}>🛡️</span>
+            <span className="badge badge-passed mb-2">CODESECAUDIT AI</span>
+            <h3 className="text-sm font-bold text-main mb-1.5">Zero Fluff. Cold, Mathematical CVSS Blocking.</h3>
+            <p className="text-xs text-muted leading-relaxed">
+              Doesn&apos;t care about your feelings or variable names. Pulls exact git diff coordinates, grounds CWEs with Qdrant vector retrieval, calculates an authentic <strong className="text-main">CVSS 9.89 / 10.0</strong>, and blocks the merge before exploit occurs.
+            </p>
           </div>
         </div>
       </section>

@@ -22,6 +22,7 @@ CodeSecAudit AI acts like an AI senior engineer inside GitHub pull requests, det
 | Hugging Face Dataset | https://huggingface.co/datasets/OMCHOKSI108/CodeSecAudit-RAG |
 | RAG Service (live) | https://OMCHOKSI108-codereview-agent.hf.space |
 | GitHub Repo | https://github.com/OMCHOKSI108/CodeSecurityAuditAgent |
+| Live PR Evaluation (CVSS 9.89) | https://github.com/OMCHOKSI108/CodeSecurityAuditAgent/pull/9 |
 | GitHub App | https://github.com/apps/codesecaudit-ai |
 | App (Client) | https://codesec-client.onrender.com |
 | API (main-server) | https://codesec-main.onrender.com |
@@ -109,35 +110,70 @@ CodeSecAudit AI addresses all four: automated detection with OWASP-aligned rules
 
 | Feature | Details |
 |---|---|
-| **GitHub Action PR review** | Triggers on `opened`, `synchronize`, `reopened` — reviews `.py`, `.js`, `.ts` files |
-| **Summary comment** | Posts a markdown table with verdict, risk score, CWE breakdown, and suggested fixes |
-| **Inline file/line comments** | Posts comments directly on vulnerable lines in the PR diff (capped at 10) |
-| **7 CWE detectors** | CWE-94, CWE-89, CWE-78, CWE-328, CWE-798, CWE-22, CWE-918 |
-| **Severity + risk score** | Weighted severity produces a 0–100 risk score and verdict (APPROVE / WARNING / REQUEST_CHANGES) |
-| **Suggested fixes** | Template-based per CWE — tells the developer exactly what to change |
-| **RAG secure guidance** | Optional retrieval from 2,833 OWASP cheat sheet chunks for contextual advice |
-| **Review history DB** | Every review saved to SQLite with search by repo, PR number, verdict, date |
-| **Dashboard analytics** | Verdict distribution, risk trends, CWE breakdown, review detail viewer |
-| **Usage-limit SaaS design** | Schema ready for free-tier caps, plan enforcement, and owner contact |
-| **Resend email workflow design** | Welcome, usage guide, limit-reached notification templates |
-| **MongoDB Atlas design** | 7-collection schema for users, installations, reviews, plans, email events |
+| **Autonomous GitHub App PR Gate** | Intercepts `pull_request` (`opened`, `synchronize`, `reopened`) events using HMAC-SHA256 webhooks and evaluates branch merge gates |
+| **Realistic CVSS v3.1 Scoring** | Computes authentic `0.00` to `10.00` severity risk scores (e.g. `9.89 / 10.0`, `8.76 / 10.0`, `2.54 / 10.0`) based on CWE base anchors and diminishing compounding marginal weights |
+| **Exact Diff Line Coordinate Tracking** | Parses unified git diff patches directly, ensuring line numbers in findings, triage tables, and deep dives match the actual PR files 1-to-1 |
+| **OWASP & CWE Contextual RAG** | High-dimensional vector semantic search over 2,833 OWASP Cheat Sheets and CWE exploit databases via Qdrant |
+| **Enterprise PR Audit Reports** | Posts structured markdown reviews with executive triage matrices, deep-dive attack vectors, production-ready code fixes, and suppression tokens |
+| **Multi-Detector Engine** | Rules and AST taint analysis covering CWE-78 (Command Injection), CWE-89 (SQLi), CWE-94 (Code Injection / eval), CWE-328 (Weak Cryptographic Hash), CWE-798 (Hardcoded Keys), CWE-22 (Path Traversal), CWE-918 (SSRF) |
+| **Real-Time Security Dashboard** | Next.js 14 frontend displaying live repository risk metrics, PR audit histories, CVSS progression trends, and direct links to GitHub reviews |
+| **1-Click Account Deletion & App Uninstall** | Permanently purges user account, uninstalls GitHub App via GitHub API (`DELETE /app/installations/{id}`), and wipes all audit history and findings |
 
 ---
 
-## Architecture (Three-Server Blueprint)
+## End-to-End Pull Request Security Audit Flow
 
 ```mermaid
 flowchart TD
-    Browser[Browser User] --> Client["client/ (Next.js + TSX)"]
-    Client -->|Same-origin rewrite /api/*| Main["main-server/ (Python + FastAPI)"]
-    Main --> PG[("PostgreSQL 16 (Persistence)")]
-    Main --> Redis[("Redis 7 (Sessions, Queues, Logs)")]
-    Main -->|Enqueue Job (202 Accepted)| Redis
-    Worker["main-worker (Background Worker)"] -->|Pop Job| Redis
-    Worker -->|Internal HTTP + Token| RAG["rag-server/ (Private FastAPI)"]
-    RAG --> Qdrant[("Qdrant (Vector DB)")]
-    Worker --> PG
-    Worker --> Redis
+    subgraph GitHub ["GitHub Infrastructure"]
+        Dev["👨‍💻 Developer"] -->|1. Opens/Updates PR| PR["Pull Request"]
+        PR -->|2. Webhook Event: pull_request.opened / synchronize| Hook["Webhook Dispatcher"]
+        CheckRun["GitHub Check Run (Gate Status)"] -.->|Fails / Blocks Merge| PR
+        Comment["PR Inline & Summary Comments"] -.->|Remediation Guide & Diff Fix| PR
+    end
+
+    subgraph Ingestion ["Ingestion & Authentication Layer"]
+        Hook -->|3. POST /v1/webhooks/github| WebhookAPI["main-server Webhook Handler"]
+        WebhookAPI -->|4. Verify HMAC-SHA256 Signature| SigVerify{"Valid Secret?"}
+        SigVerify -- No --> Reject["HTTP 401 Unauthorized"]
+        SigVerify -- Yes --> Enqueue["Enqueue Job (HTTP 202 Accepted)"]
+        Enqueue --> Queue[("Redis Queue / Inline Worker")]
+    end
+
+    subgraph AuditPipeline ["Security Analysis Pipeline"]
+        Queue --> Worker["Audit Worker Loop"]
+        Worker -->|5. Fetch PR Diff| GHAPI["GitHub REST API (vnd.github.v3.diff)"]
+        GHAPI --> Worker
+        Worker -->|6. Map Exact Unified Patch Lines| DiffCoord["Diff Coordinate Mapper (1:1 Line Tracking)"]
+        DiffCoord --> Engine["Multi-Layer Detector Engine"]
+        Engine -->|7. Static Regex & AST Taint Sinks| StaticFind["CWE Findings & Sinks"]
+        Engine -->|8. Query Semantic Context| RAGServer["rag-server (Private Microservice)"]
+        RAGServer -->|9. Cosine Similarity Vector Search| QdrantDB[("Qdrant Vector DB (2,833 OWASP Chunks)")]
+        QdrantDB -->|Remediation Vectors & OWASP Guidelines| RAGServer
+        RAGServer --> Engine
+        StaticFind --> RiskEngine["CVSS v3.1 Mathematical Scoring Engine"]
+        RiskEngine -->|Base Score Anchored + Marginal Compounding| CVSS["CVSS Score (0.00 – 10.00)"]
+    end
+
+    subgraph GateEnforcement ["Gate Decision & Feedback Dispatch"]
+        CVSS --> Decision{"CVSS >= 7.00?"}
+        Decision -- ">= 7.00 (Critical/High)" --> Block["Verdict: REQUEST_CHANGES (Merge Blocked)"]
+        Decision -- "4.00 - 6.99 (Medium)" --> Warn["Verdict: WARNING (Review Caution)"]
+        Decision -- "< 4.00 (Low)" --> Pass["Verdict: APPROVE (Merge Allowed)"]
+        Block --> Formatter["Enterprise Markdown Formatter"]
+        Warn --> Formatter
+        Pass --> Formatter
+        Formatter -->|10. Post Check Run (conclusion: failure/success)| CheckRun
+        Formatter -->|11. Post In-Depth PR Comment| Comment
+        Formatter -->|12. Persist Audit Record & Findings| PostgresDB[("PostgreSQL 16")]
+    end
+
+    subgraph WebDashboard ["Real-Time Dashboard & User Control"]
+        User["🛡️ User / Auditor"] -->|PKCE GitHub OAuth| WebClient["Next.js Web Client"]
+        WebClient -->|View PR Audits, CVSS Risk & Deep Dives| PostgresDB
+        WebClient -->|1-Click Account Deletion & Uninstall| DeleteAPI["DELETE /v1/auth/account"]
+        DeleteAPI -->|Wipes All Data & Uninstalls App| GitHub
+    end
 ```
 
 ---

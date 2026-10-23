@@ -131,3 +131,25 @@ async def sync_installation_repositories(installation_id: str) -> list[dict]:
         logger.warning(f"Error fetching installation repositories for {installation_id}: {e}")
         return []
 
+
+async def uninstall_github_app(installation_id: str) -> bool:
+    """Delete an installation via GitHub App API (uninstalls app from user account and repositories)."""
+    if not installation_id:
+        return False
+    try:
+        app_jwt = _build_app_jwt()
+        url = f"{GITHUB_API_BASE}/app/installations/{installation_id}"
+        headers = {
+            "Authorization": f"Bearer {app_jwt}",
+            "Accept": "application/vnd.github+json",
+        }
+        async with httpx.AsyncClient(timeout=10.0) as http:
+            resp = await http.delete(url, headers=headers)
+            if resp.status_code in (204, 200, 404):
+                logger.info(f"Successfully uninstalled GitHub App installation {installation_id}")
+                return True
+            logger.warning(f"Failed to delete GitHub App installation {installation_id}: {resp.status_code}")
+    except Exception as e:
+        logger.warning(f"Error uninstalling GitHub App installation {installation_id}: {e}")
+    return False
+

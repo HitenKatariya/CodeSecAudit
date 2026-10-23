@@ -8,24 +8,25 @@ import { Button } from "@/components/ui/Button";
 import { Badge, GateBadge } from "@/components/ui/Badge";
 import { GitHubIcon } from "@/components/ui/Icons";
 import { DataTable, Column } from "@/components/ui/DataTable";
-import { fetchMe, fetchPullRequests } from "@/lib/api";
+import { fetchMe, fetchPullRequests, deleteAccount } from "@/lib/api";
 import { UserProfile, PullRequest } from "@/types";
 
 export default function SettingsPage() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [prs, setPrs] = useState<PullRequest[]>([]);
-  const [orgName, setOrgName] = useState("Acme Engineering");
-  const [contactEmail, setContactEmail] = useState("security@acme.corp");
+  const [orgName, setOrgName] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
   const [emailAlerts, setEmailAlerts] = useState(true);
   const [dailyDigest, setDailyDigest] = useState(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchMe().then((u) => {
       if (u) {
         setUser(u);
-        if (u.organization_name) setOrgName(u.organization_name);
-        if (u.email) setContactEmail(u.email);
+        setOrgName(u.organization_name || (u.username ? `@${u.username}` : "Personal"));
+        setContactEmail(u.email || "");
       }
     });
     fetchPullRequests().then(setPrs);
@@ -35,6 +36,24 @@ export default function SettingsPage() {
     e.preventDefault();
     setToastMessage("Settings saved successfully.");
     setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  const handleDeleteAccount = async () => {
+    const confirmed = window.confirm(
+      "⚠️ PERMANENT ACCOUNT DELETION\n\nAre you sure you want to delete your account?\n\nThis will:\n1. Wipe out your account and all audit history completely.\n2. Automatically uninstall the CodeSecAudit GitHub App from your GitHub account.\n3. Delete all stored PR reviews, findings, and repository associations.\n\nThis action cannot be undone."
+    );
+    if (!confirmed) return;
+    setDeleting(true);
+    const ok = await deleteAccount();
+    if (ok) {
+      if (typeof window !== "undefined") {
+        localStorage.clear();
+      }
+      window.location.href = "/?deleted=true";
+    } else {
+      alert("Failed to delete account. Please try again or contact support.");
+      setDeleting(false);
+    }
   };
 
   const reviewColumns: Column<PullRequest>[] = [
@@ -120,8 +139,8 @@ export default function SettingsPage() {
   return (
     <div className="space-y">
       <PageHeader
-        title="Organization Settings"
-        subtitle="Manage your workspace configuration, security keys, and alerts."
+        title="Account & Security Settings"
+        subtitle="Manage your GitHub App connection, security audit history, and personal account controls."
       />
 
       {toastMessage && (
@@ -212,31 +231,33 @@ export default function SettingsPage() {
         />
       </Card>
 
-      {/* Workspace Profile */}
+      {/* Personal Security Profile */}
       <Card
-        title="Workspace Profile"
-        description="Core organization identifiers for automated security audits"
+        title="Personal Security Profile"
+        description="Your security alert contact and preferences"
       >
         <form onSubmit={handleSave} className="flex flex-col gap-4">
           <div className="grid-2">
             <div>
               <label className="text-xs text-muted block mb-1">
-                Organization Name
+                Account / Display Name
               </label>
               <input
                 type="text"
                 value={orgName}
+                placeholder="Your name or handle"
                 onChange={(e) => setOrgName(e.target.value)}
                 className="form-input w-full"
               />
             </div>
             <div>
               <label className="text-xs text-muted block mb-1">
-                Security Contact Email
+                Security Alert Email
               </label>
               <input
                 type="email"
                 value={contactEmail}
+                placeholder="your.email@example.com"
                 onChange={(e) => setContactEmail(e.target.value)}
                 className="form-input w-full"
               />
@@ -244,7 +265,7 @@ export default function SettingsPage() {
           </div>
           <div>
             <Button type="submit" variant="primary" size="sm">
-              Save Profile
+              Save Preferences
             </Button>
           </div>
         </form>
@@ -315,18 +336,40 @@ export default function SettingsPage() {
         title={
           <span style={{ color: "var(--crit-color)" }}>Danger Zone</span>
         }
-        description="Irreversible maintenance and cache actions"
+        description="Irreversible account deletion, GitHub App uninstall, and data wipe"
       >
-        <p className="text-xs text-muted mb-3 leading-relaxed">
-          Flushing the audit cache will force CodeSecAudit to perform full semantic re-indexing on all repositories.
-        </p>
-        <Button
-          variant="danger"
-          size="sm"
-          onClick={() => alert("Cache purged successfully.")}
-        >
-          Purge Semantic Audit Cache
-        </Button>
+        <div className="flex flex-col gap-4">
+          <div className="p-4 rounded border" style={{ borderColor: "var(--crit-border)", backgroundColor: "var(--crit-bg)" }}>
+            <span className="font-bold text-xs text-main block mb-1">
+              Delete Account & Wipe All Security Data
+            </span>
+            <p className="text-xs text-muted mb-3 leading-relaxed">
+              Permanently delete your user account, automatically uninstall the CodeSecAudit GitHub App from your GitHub account and repositories, and purge all audit history, findings, and scanned repositories. When you return, all data will be completely wiped clean.
+            </p>
+            <Button
+              variant="danger"
+              size="sm"
+              disabled={deleting}
+              onClick={handleDeleteAccount}
+            >
+              {deleting ? "Deleting Account & Uninstalling..." : "Delete Account & Uninstall GitHub App"}
+            </Button>
+          </div>
+
+          <div className="flex items-center justify-between text-xs pt-2 border-t" style={{ borderColor: "var(--border-subtle)" }}>
+            <div>
+              <span className="font-semibold text-main block">Semantic Audit Cache</span>
+              <span className="text-dim text-[11px]">Force CodeSecAudit to rebuild vector index embeddings</span>
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => alert("Semantic cache purged successfully.")}
+            >
+              Purge Cache
+            </Button>
+          </div>
+        </div>
       </Card>
     </div>
   );

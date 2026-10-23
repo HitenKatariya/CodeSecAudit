@@ -65,6 +65,22 @@ export async function logoutUser(): Promise<boolean> {
   }
 }
 
+export async function deleteAccount(): Promise<boolean> {
+  try {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("codesec_app_installed");
+    }
+    const res = await fetch("/api/auth/account", {
+      method: "DELETE",
+      credentials: "include",
+    });
+    return res.ok;
+  } catch (err) {
+    console.error("Delete account failed:", err);
+    return false;
+  }
+}
+
 
 export async function fetchReviews(): Promise<ReviewRecord[]> {
   try {

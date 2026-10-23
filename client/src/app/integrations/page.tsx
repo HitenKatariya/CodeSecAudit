@@ -11,7 +11,7 @@ import { fetchMe, fetchRepositories, fetchPullRequests, GITHUB_APP_INSTALL_URL }
 export default function IntegrationsPage() {
   const [testingWebhook, setTestingWebhook] = useState(false);
   const [testResult, setTestResult] = useState<string | null>(null);
-  const [orgName, setOrgName] = useState("Acme Engineering");
+  const [orgName, setOrgName] = useState("");
   const [repoCount, setRepoCount] = useState(0);
   const [webhookDeliveries, setWebhookDeliveries] = useState<any[]>([]);
 

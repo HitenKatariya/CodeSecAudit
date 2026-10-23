@@ -12,6 +12,12 @@ def test_auth_me_unauthenticated():
     assert "Not authenticated" in resp.text
 
 
+def test_auth_delete_account_unauthenticated():
+    resp = client.delete("/v1/auth/account")
+    assert resp.status_code == 401
+    assert "Not authenticated" in resp.text
+
+
 def test_auth_login_validation():
     resp = client.post("/v1/auth/login", json={"username": ""})
     assert resp.status_code == 400

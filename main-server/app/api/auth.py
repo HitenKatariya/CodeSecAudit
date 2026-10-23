@@ -6,17 +6,22 @@ import secrets
 from typing import Optional
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Query, Request, Response, status
 from fastapi.responses import RedirectResponse
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.schemas import LoginRequest, UserMeResponse
 from app.core.config import get_settings
 from app.core.redis import get_redis_service
-from app.db.models.audit import AuditEvent
-from app.db.models.github import GitHubInstallation, Repository
+from app.db.models.audit import AuditEvent, UsageEvent
+from app.db.models.github import GitHubInstallation, Repository, WebhookDelivery
 from app.db.models.organization import Membership, Organization
+from app.db.models.review import Finding, Review, ReviewJob
 from app.db.models.user import User
 from app.db.session import get_db
-from app.security.github_app import get_installation_details, sync_installation_repositories
+from app.security.github_app import (
+    get_installation_details,
+    sync_installation_repositories,
+    uninstall_github_app,
+)
 from app.security.oauth import (
     create_oauth_authorization_url,
     exchange_github_app_code,
@@ -391,4 +396,74 @@ async def get_me(
         organization_role=tenant.role,
         is_installed=has_install,
     )
+
+
+@router.delete("/account", tags=["Current User"])
+@router.post("/delete-account", tags=["Current User"])
+async def delete_account(
+    request: Request,
+    response: Response,
+    tenant: TenantContext = Depends(get_tenant_context),
+    codesec_session: str | None = Cookie(default=None, alias=SESSION_COOKIE_NAME),
+    db: AsyncSession = Depends(get_db),
+):
+    """Permanently delete user account, uninstall GitHub App from user repos, and wipe all organization audit data."""
+    user_id = tenant.user.id
+    org_id = tenant.organization.id
+
+    # 1. Uninstall GitHub App from user account and repositories
+    inst_stmt = select(GitHubInstallation).where(GitHubInstallation.organization_id == org_id)
+    installations = (await db.execute(inst_stmt)).scalars().all()
+    for inst in installations:
+        try:
+            await uninstall_github_app(inst.installation_id)
+        except Exception as e:
+            logger.warning(f"Error calling GitHub uninstall for {inst.installation_id}: {e}")
+
+    # 2. Delete all Findings associated with organization's Reviews
+    review_ids_stmt = select(Review.id).where(Review.organization_id == org_id)
+    review_ids = (await db.execute(review_ids_stmt)).scalars().all()
+    if review_ids:
+        await db.execute(delete(Finding).where(Finding.review_id.in_(review_ids)))
+
+    # 3. Delete Reviews & ReviewJobs
+    await db.execute(delete(Review).where(Review.organization_id == org_id))
+    await db.execute(delete(ReviewJob).where(ReviewJob.organization_id == org_id))
+
+    # 4. Delete Repositories & WebhookDeliveries
+    repo_ids_stmt = select(Repository.id).where(Repository.organization_id == org_id)
+    repo_ids = (await db.execute(repo_ids_stmt)).scalars().all()
+    if repo_ids:
+        await db.execute(delete(WebhookDelivery).where(WebhookDelivery.repository_id.in_(repo_ids)))
+    await db.execute(delete(Repository).where(Repository.organization_id == org_id))
+
+    # 5. Delete GitHub Installations
+    await db.execute(delete(GitHubInstallation).where(GitHubInstallation.organization_id == org_id))
+
+    # 6. Delete Audit & Usage Events
+    await db.execute(
+        delete(AuditEvent).where((AuditEvent.user_id == user_id) | (AuditEvent.organization_id == org_id))
+    )
+    await db.execute(delete(UsageEvent).where(UsageEvent.organization_id == org_id))
+
+    # 7. Delete Memberships
+    await db.execute(
+        delete(Membership).where((Membership.user_id == user_id) | (Membership.organization_id == org_id))
+    )
+
+    # 8. Delete Organization
+    await db.execute(delete(Organization).where(Organization.id == org_id))
+
+    # 9. Delete User
+    await db.execute(delete(User).where(User.id == user_id))
+
+    await db.commit()
+
+    # 10. Destroy Session in Redis and clear cookie
+    await destroy_user_session(response, codesec_session)
+
+    return {
+        "status": "success",
+        "message": "Account deleted, GitHub app uninstalled, and all security data wiped out cleanly.",
+    }
 

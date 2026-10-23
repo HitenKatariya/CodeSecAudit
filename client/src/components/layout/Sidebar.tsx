@@ -80,8 +80,8 @@ export function Sidebar({ user: propUser, onSignOut }: SidebarProps = {}) {
   }, [propUser]);
 
   const user = propUser !== undefined ? propUser : internalUser;
-  const orgName = user?.organization_name || "Enterprise Workspace";
-  const roleDisplay = user?.organization_role ? `${user.organization_role.charAt(0).toUpperCase() + user.organization_role.slice(1)}` : "Security Auditor";
+  const orgName = user?.username ? `@${user.username}` : user?.organization_name || "Personal Workspace";
+  const roleDisplay = user?.organization_role ? (user.organization_role.toLowerCase() === "admin" ? "Account Owner" : user.organization_role) : "Developer";
 
   return (
     <aside className="app-sidebar">
