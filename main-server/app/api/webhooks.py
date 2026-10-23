@@ -9,20 +9,23 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.core.redis import get_redis_service
 from app.db.models.github import GitHubInstallation, Repository, WebhookDelivery
+from app.db.models.organization import Organization
 from app.db.models.review import ReviewJob
 from app.db.session import get_db
 from app.jobs.queue import enqueue_review_job
 from app.security.signatures import verify_github_signature
 
 logger = logging.getLogger("main_server")
-router = APIRouter(prefix="/v1/webhooks", tags=["Webhooks"])
+router = APIRouter(prefix="/webhooks", tags=["Webhooks"])
 
 
+@router.post("", status_code=status.HTTP_202_ACCEPTED)
 @router.post("/github", status_code=status.HTTP_202_ACCEPTED)
 async def github_webhook(
     request: Request,
     body: bytes = Depends(verify_github_signature),
     db: AsyncSession = Depends(get_db),
+
     x_github_delivery: str = Header(..., alias="X-GitHub-Delivery"),
     x_github_event: str = Header(..., alias="X-GitHub-Event"),
 ):
@@ -67,8 +70,30 @@ async def github_webhook(
     inst_stmt = select(GitHubInstallation).where(GitHubInstallation.installation_id == gh_install_id)
     inst = (await db.execute(inst_stmt)).scalar_one_or_none()
     if not inst:
-        logger.warning(f"Webhook from unlinked installation: {gh_install_id}")
-        return {"status": "installation_not_found"}
+        account_data = install_data.get("account") or repo_data.get("owner") or {}
+        account_login = account_data.get("login", "")
+        # Match organization or fallback to first organization in database
+        org = None
+        if account_login:
+            org_stmt = select(Organization).where(Organization.slug.ilike(f"{account_login.lower()}%"))
+            org = (await db.execute(org_stmt)).scalars().first()
+        if not org:
+            org = (await db.execute(select(Organization))).scalars().first()
+        if not org:
+            org = Organization(name=f"{account_login or 'Default'}'s Org", slug=f"{(account_login or 'default').lower()}-org")
+            db.add(org)
+            await db.flush()
+
+        inst = GitHubInstallation(
+            installation_id=gh_install_id,
+            organization_id=org.id,
+            account_login=account_login or "unknown",
+            target_type=install_data.get("target_type", "User"),
+        )
+        db.add(inst)
+        await db.flush()
+        logger.info(f"Auto-linked installation {gh_install_id} to organization {org.id}")
+
 
     # Resolve or register repository
     repo_stmt = select(Repository).where(Repository.github_repo_id == gh_repo_id)
