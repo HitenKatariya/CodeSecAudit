@@ -1,6 +1,7 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   GitHubIcon,
   ShieldCheckIcon,
@@ -9,6 +10,7 @@ import {
   PolicyIcon,
 } from "@/components/ui/Icons";
 import { Button } from "@/components/ui/Button";
+import { fetchMe, loginUser } from "@/lib/api";
 
 const FEATURES = [
   {
@@ -29,6 +31,91 @@ const FEATURES = [
 ];
 
 export default function LoginPage() {
+  const router = useRouter();
+  const [username, setUsername] = useState("HitenKatariya");
+  const [email, setEmail] = useState("hitenvk22@gmail.com");
+  const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    fetchMe()
+      .then((user) => {
+        if (!isMounted) return;
+        if (user) {
+          router.replace("/dashboard");
+        } else {
+          setCheckingSession(false);
+        }
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        setCheckingSession(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [router]);
+
+  const handleDirectLogin = async (e?: React.FormEvent, customUser?: string, customEmail?: string) => {
+    if (e) e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    const targetUser = customUser || username.trim();
+    const targetEmail = customEmail || email.trim();
+
+    if (!targetUser) {
+      setError("Please provide a username");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const user = await loginUser({
+        username: targetUser,
+        email: targetEmail || undefined,
+      });
+
+      if (user) {
+        router.replace("/dashboard");
+      } else {
+        setError("Sign in failed. Please verify the backend service is reachable.");
+        setLoading(false);
+      }
+    } catch (err) {
+      setError("An unexpected error occurred during sign in.");
+      setLoading(false);
+    }
+  };
+
+  if (checkingSession) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "100vh",
+          background: "var(--bg-canvas, #090d16)",
+        }}
+      >
+        <div
+          style={{
+            width: "32px",
+            height: "32px",
+            border: "3px solid rgba(255,255,255,0.1)",
+            borderTopColor: "var(--accent, #3b82f6)",
+            borderRadius: "50%",
+            animation: "spin 0.8s linear infinite",
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="auth-split">
       <div className="auth-brand-pane">
@@ -65,13 +152,91 @@ export default function LoginPage() {
           <div className="auth-card-header">
             <h2 className="auth-card-title">Sign in</h2>
             <p className="auth-card-subtitle">
-              Connect your GitHub account to start auditing pull requests.
+              Sign in with your workspace account or continue with GitHub.
             </p>
+          </div>
+
+          {error && (
+            <div
+              style={{
+                padding: "0.75rem",
+                borderRadius: "6px",
+                background: "rgba(239, 68, 68, 0.1)",
+                border: "1px solid rgba(239, 68, 68, 0.25)",
+                color: "var(--fail-color, #ef4444)",
+                fontSize: "0.8rem",
+              }}
+            >
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleDirectLogin} style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}>
+            <div>
+              <label style={{ display: "block", fontSize: "0.75rem", color: "var(--text-muted)", marginBottom: "0.3rem" }}>
+                Username / Handle
+              </label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="e.g. HitenKatariya"
+                required
+                style={{
+                  width: "100%",
+                  padding: "0.6rem 0.75rem",
+                  borderRadius: "6px",
+                  background: "var(--bg-card, #0f172a)",
+                  border: "1px solid var(--border-subtle, #334155)",
+                  color: "var(--text-main, #f8fafc)",
+                  fontSize: "0.85rem",
+                  outline: "none",
+                }}
+              />
+            </div>
+
+            <div>
+              <label style={{ display: "block", fontSize: "0.75rem", color: "var(--text-muted)", marginBottom: "0.3rem" }}>
+                Email Address
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="e.g. hitenvk22@gmail.com"
+                style={{
+                  width: "100%",
+                  padding: "0.6rem 0.75rem",
+                  borderRadius: "6px",
+                  background: "var(--bg-card, #0f172a)",
+                  border: "1px solid var(--border-subtle, #334155)",
+                  color: "var(--text-main, #f8fafc)",
+                  fontSize: "0.85rem",
+                  outline: "none",
+                }}
+              />
+            </div>
+
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              disabled={loading}
+              className="w-full font-bold"
+            >
+              {loading ? "Signing in..." : "Sign in to Workspace"}
+            </Button>
+          </form>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", margin: "0.25rem 0" }}>
+            <div style={{ flex: 1, height: "1px", background: "var(--border-subtle, #334155)" }} />
+            <span style={{ fontSize: "0.7rem", color: "var(--text-dim)", textTransform: "uppercase" }}>or</span>
+            <div style={{ flex: 1, height: "1px", background: "var(--border-subtle, #334155)" }} />
           </div>
 
           <a href="/api/auth/github/start" className="w-full">
             <Button
-              variant="primary"
+              variant="secondary"
               size="lg"
               className="w-full font-bold auth-github-btn"
               icon={<GitHubIcon size={18} />}
@@ -80,9 +245,28 @@ export default function LoginPage() {
             </Button>
           </a>
 
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <button
+              type="button"
+              onClick={() => handleDirectLogin(undefined, "HitenKatariya", "hitenvk22@gmail.com")}
+              className="btn btn-ghost btn-sm"
+              style={{ flex: 1, fontSize: "0.75rem", border: "1px dashed var(--border-subtle)" }}
+            >
+              ⚡ Quick Sign in (Hiten)
+            </button>
+            <button
+              type="button"
+              onClick={() => handleDirectLogin(undefined, "omchoksi", "om@codesec.ai")}
+              className="btn btn-ghost btn-sm"
+              style={{ flex: 1, fontSize: "0.75rem", border: "1px dashed var(--border-subtle)" }}
+            >
+              ⚡ Quick Sign in (Om)
+            </button>
+          </div>
+
           <div className="auth-security-notes">
             <p>Protected with PKCE authorization and tenant-scoped sessions.</p>
-            <p>Your browser never accesses or stores raw GitHub API credentials.</p>
+            <p>Audit trail recorded in PostgreSQL on every authentication event.</p>
           </div>
         </div>
       </div>

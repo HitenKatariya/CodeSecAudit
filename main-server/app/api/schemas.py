@@ -29,6 +29,12 @@ class UserMeResponse(BaseModel):
     organization_role: str
 
 
+class LoginRequest(BaseModel):
+    username: str = "HitenKatariya"
+    email: Optional[str] = None
+    organization_name: Optional[str] = None
+
+
 class FindingItem(BaseModel):
     id: str
     cwe_id: str

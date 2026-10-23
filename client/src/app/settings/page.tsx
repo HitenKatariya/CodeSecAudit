@@ -17,8 +17,8 @@ export default function SettingsPage() {
 
   React.useEffect(() => {
     fetchMe().then((user) => {
-      if (user.organization_name) setOrgName(user.organization_name);
-      if (user.email) setContactEmail(user.email);
+      if (user?.organization_name) setOrgName(user.organization_name);
+      if (user?.email) setContactEmail(user.email);
     });
   }, []);
 

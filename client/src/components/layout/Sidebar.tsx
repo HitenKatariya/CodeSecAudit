@@ -64,16 +64,24 @@ const NAV_GROUPS: { group: string; items: NavLinkItem[] }[] = [
   },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  user?: UserProfile | null;
+  onSignOut?: () => void;
+}
+
+export function Sidebar({ user: propUser, onSignOut }: SidebarProps = {}) {
   const pathname = usePathname();
-  const [user, setUser] = React.useState<UserProfile | null>(null);
+  const [internalUser, setInternalUser] = React.useState<UserProfile | null>(null);
 
   React.useEffect(() => {
-    fetchMe().then(setUser);
-  }, []);
+    if (propUser === undefined) {
+      fetchMe().then(setInternalUser);
+    }
+  }, [propUser]);
 
+  const user = propUser !== undefined ? propUser : internalUser;
   const initials = user?.username ? user.username.slice(0, 2).toUpperCase() : "CS";
-  const orgName = user?.organization_name || "Acme Engineering";
+  const orgName = user?.organization_name || "Workspace";
   const displayName = user?.username ? `${user.username} (${user.organization_role || "Member"})` : "User";
 
   return (
@@ -124,6 +132,31 @@ export function Sidebar() {
             <div style={{ fontSize: "0.8rem", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{orgName}</div>
             <div style={{ fontSize: "0.7rem", color: "var(--text-dim)" }}>{displayName}</div>
           </div>
+          {onSignOut && (
+            <button
+              onClick={onSignOut}
+              title="Sign Out"
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "var(--text-dim)",
+                cursor: "pointer",
+                padding: "4px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: "4px",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "var(--fail-color)")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-dim)")}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
     </aside>

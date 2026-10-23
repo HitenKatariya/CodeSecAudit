@@ -11,22 +11,51 @@ import {
   UserProfile,
 } from "@/types";
 
-export async function fetchMe(): Promise<UserProfile> {
+export async function fetchMe(): Promise<UserProfile | null> {
   try {
     const res = await fetch("/api/auth/me", { credentials: "include" });
-    if (res.ok) return await res.json();
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.id) {
+        return data;
+      }
+    }
   } catch {}
-  return {
-    id: "usr-default",
-    github_id: "108",
-    username: "omchoksi",
-    email: "om@codesec.ai",
-    avatar_url: "https://avatars.githubusercontent.com/u/108?v=4",
-    is_admin: true,
-    active_organization_id: "org-acme",
-    organization_name: "Acme Engineering",
-    organization_role: "admin",
-  };
+  return null;
+}
+
+export async function loginUser(credentials?: {
+  username?: string;
+  email?: string;
+  organization_name?: string;
+}): Promise<UserProfile | null> {
+  try {
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(credentials || { username: "HitenKatariya" }),
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (err) {
+    console.error("Login failed:", err);
+  }
+  return null;
+}
+
+export async function logoutUser(): Promise<boolean> {
+  try {
+    const res = await fetch("/api/auth/logout", {
+      method: "POST",
+      credentials: "include",
+    });
+    return res.ok;
+  } catch (err) {
+    console.error("Logout failed:", err);
+    return false;
+  }
 }
 
 export async function fetchReviews(): Promise<ReviewRecord[]> {
