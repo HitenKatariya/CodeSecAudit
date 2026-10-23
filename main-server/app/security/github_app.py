@@ -72,3 +72,46 @@ async def post_pr_comment(full_name: str, pr_number: int, installation_id: str, 
             logger.warning(f"Failed to post PR comment on {full_name}#{pr_number}: {resp.status_code} {resp.text}")
             return False
         return True
+
+
+async def get_installation_details(installation_id: str) -> dict:
+    """Fetch metadata for an installed GitHub App instance using app JWT."""
+    try:
+        app_jwt = _build_app_jwt()
+    except Exception as e:
+        logger.warning(f"Could not build App JWT: {e}")
+        return {}
+
+    url = f"{GITHUB_API_BASE}/app/installations/{installation_id}"
+    headers = {"Authorization": f"Bearer {app_jwt}", "Accept": "application/vnd.github+json"}
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as http:
+            resp = await http.get(url, headers=headers)
+            if resp.status_code != 200:
+                logger.warning(f"Failed to fetch installation details for {installation_id}: {resp.status_code}")
+                return {}
+            return resp.json()
+    except Exception as e:
+        logger.warning(f"Error fetching installation details: {e}")
+        return {}
+
+
+async def sync_installation_repositories(installation_id: str) -> list[dict]:
+    """Fetch repositories accessible by a given GitHub App installation."""
+    try:
+        token = await get_installation_token(installation_id)
+        url = f"{GITHUB_API_BASE}/installation/repositories"
+        headers = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"}
+
+        async with httpx.AsyncClient(timeout=15.0) as http:
+            resp = await http.get(url, headers=headers)
+            if resp.status_code != 200:
+                logger.warning(f"Failed to fetch installation repositories for {installation_id}: {resp.status_code}")
+                return []
+            data = resp.json()
+            return data.get("repositories", [])
+    except Exception as e:
+        logger.warning(f"Error fetching installation repositories for {installation_id}: {e}")
+        return []
+

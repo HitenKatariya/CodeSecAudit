@@ -1,6 +1,7 @@
 """Authentication API routes."""
 
 import json
+import logging
 import secrets
 from typing import Optional
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Query, Request, Response, status
@@ -11,16 +12,25 @@ from app.api.schemas import LoginRequest, UserMeResponse
 from app.core.config import get_settings
 from app.core.redis import get_redis_service
 from app.db.models.audit import AuditEvent
+from app.db.models.github import GitHubInstallation, Repository
 from app.db.models.organization import Membership, Organization
 from app.db.models.user import User
 from app.db.session import get_db
-from app.security.oauth import create_oauth_authorization_url, verify_oauth_callback
+from app.security.github_app import get_installation_details, sync_installation_repositories
+from app.security.oauth import (
+    create_oauth_authorization_url,
+    exchange_github_app_code,
+    verify_oauth_callback,
+)
 from app.security.sessions import (
     SESSION_COOKIE_NAME,
     create_user_session,
     destroy_user_session,
 )
 from app.security.tenant import TenantContext, get_tenant_context
+
+logger = logging.getLogger("main_server")
+
 
 router = APIRouter(prefix="/v1/auth", tags=["Authentication"])
 
@@ -37,62 +47,157 @@ async def github_auth_start():
 async def github_auth_callback(
     request: Request,
     response: Response,
-    code: str = Query(...),
-    state: str = Query(...),
+    code: Optional[str] = Query(None),
+    state: Optional[str] = Query(None),
+    installation_id: Optional[str] = Query(None),
+    setup_action: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
 ):
     settings = get_settings()
-    try:
-        user_data, email = await verify_oauth_callback(code, state)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"OAuth verification failed: {e}")
+    user_data = None
+    email = ""
 
-    github_id = str(user_data["id"])
-    username = user_data.get("login", "")
-    avatar = user_data.get("avatar_url", "")
+    # 1. Exchange authorization code
+    if state and code:
+        # Standard PKCE OAuth callback from "Sign in with GitHub"
+        try:
+            user_data, email = await verify_oauth_callback(code, state)
+        except Exception as e:
+            logger.warning(f"Standard OAuth verification failed: {e}")
+            raise HTTPException(status_code=400, detail=f"OAuth verification failed: {e}")
+    elif code:
+        # GitHub App installation callback with authorization code
+        try:
+            user_data, email = await exchange_github_app_code(code)
+        except Exception as e:
+            logger.warning(f"GitHub App code exchange failed: {e}")
 
-    # Upsert user in Postgres
-    stmt = select(User).where(User.github_id == github_id)
-    user = (await db.execute(stmt)).scalar_one_or_none()
-    if not user:
-        user = User(github_id=github_id, username=username, email=email, avatar_url=avatar)
-        db.add(user)
-        await db.flush()
-    else:
-        user.username = username
-        user.email = email
-        user.avatar_url = avatar
+    # 2. If code wasn't provided or didn't yield user, inspect existing session cookie
+    user = None
+    org_id = None
+    if not user_data:
+        cookie_val = request.cookies.get(SESSION_COOKIE_NAME)
+        if cookie_val:
+            try:
+                redis_service = get_redis_service(settings.redis_url)
+                session_data = await redis_service.get_session(cookie_val)
+                if session_data and "user_id" in session_data:
+                    u_stmt = select(User).where(User.id == session_data["user_id"])
+                    user = (await db.execute(u_stmt)).scalar_one_or_none()
+                    if user:
+                        org_id = session_data.get("organization_id")
+            except Exception as e:
+                logger.warning(f"Failed to resolve existing session during install callback: {e}")
 
-    # Ensure personal organization in Postgres
-    mem_stmt = select(Membership, Organization).join(Organization).where(Membership.user_id == user.id)
-    mem_row = (await db.execute(mem_stmt)).first()
+    # 3. If still no user and installation_id is provided, resolve from GitHub App installation
+    if not user and not user_data and installation_id:
+        try:
+            inst_details = await get_installation_details(str(installation_id))
+            acc = inst_details.get("account", {})
+            if acc and acc.get("id"):
+                user_data = {
+                    "id": str(acc.get("id")),
+                    "login": acc.get("login", ""),
+                    "avatar_url": acc.get("avatar_url", ""),
+                    "type": acc.get("type", "User"),
+                }
+                email = f"{acc.get('login', '').lower()}@codesec.ai"
+        except Exception as e:
+            logger.warning(f"Failed to resolve user from installation {installation_id}: {e}")
 
-    if not mem_row:
-        org = Organization(name=f"{username}'s Org", slug=f"{username.lower()}-personal")
-        db.add(org)
-        await db.flush()
-        membership = Membership(organization_id=org.id, user_id=user.id, role="admin")
-        db.add(membership)
-        org_id = org.id
-    else:
-        org_id = mem_row[1].id
+    if not user and not user_data:
+        login_url = f"{settings.next_public_app_url.rstrip('/')}/login?error=oauth_failed"
+        return RedirectResponse(login_url, status_code=status.HTTP_302_FOUND)
 
-    # Record login audit event
+    # 4. Upsert User & Organization if user_data resolved
+    if user_data:
+        github_id = str(user_data["id"])
+        username = user_data.get("login", "")
+        avatar = user_data.get("avatar_url", "")
+
+        stmt = select(User).where(User.github_id == github_id)
+        user = (await db.execute(stmt)).scalar_one_or_none()
+        if not user:
+            user = User(github_id=github_id, username=username, email=email, avatar_url=avatar)
+            db.add(user)
+            await db.flush()
+        else:
+            user.username = username
+            if email:
+                user.email = email
+            if avatar:
+                user.avatar_url = avatar
+
+        # Ensure personal organization in Postgres
+        mem_stmt = select(Membership, Organization).join(Organization).where(Membership.user_id == user.id)
+        mem_row = (await db.execute(mem_stmt)).first()
+
+        if not mem_row:
+            org = Organization(name=f"{username}'s Org", slug=f"{username.lower()}-personal")
+            db.add(org)
+            await db.flush()
+            membership = Membership(organization_id=org.id, user_id=user.id, role="admin")
+            db.add(membership)
+            org_id = org.id
+        else:
+            org_id = mem_row[1].id
+
+    # 5. If installation_id is present, link GitHubInstallation and sync repositories
+    if installation_id and org_id and user:
+        try:
+            inst_str = str(installation_id)
+            inst_stmt = select(GitHubInstallation).where(GitHubInstallation.installation_id == inst_str)
+            inst = (await db.execute(inst_stmt)).scalar_one_or_none()
+            if not inst:
+                inst = GitHubInstallation(
+                    installation_id=inst_str,
+                    organization_id=org_id,
+                    account_login=user.username,
+                    target_type="User",
+                )
+                db.add(inst)
+            else:
+                inst.organization_id = org_id
+                inst.account_login = user.username
+            await db.flush()
+
+            # Sync repositories from GitHub for this installation
+            repos = await sync_installation_repositories(inst_str)
+            for r in repos:
+                gh_repo_id = str(r["id"])
+                r_stmt = select(Repository).where(Repository.github_repo_id == gh_repo_id)
+                existing_repo = (await db.execute(r_stmt)).scalar_one_or_none()
+                if not existing_repo:
+                    db.add(
+                        Repository(
+                            organization_id=org_id,
+                            github_repo_id=gh_repo_id,
+                            full_name=r.get("full_name") or r.get("name", ""),
+                            is_private=r.get("private", False),
+                        )
+                    )
+        except Exception as e:
+            logger.warning(f"Could not link installation or sync repos: {e}")
+
+    # 6. Record login / install audit event
     client_ip = request.client.host if request.client else "unknown"
     user_agent = request.headers.get("user-agent", "unknown")
+    action_name = "auth.install" if installation_id else "auth.login"
     db.add(
         AuditEvent(
             user_id=user.id,
             organization_id=org_id,
-            action="auth.login",
+            action=action_name,
             resource_type="session",
             resource_id=user.id,
             ip_address=client_ip,
             details_json=json.dumps({
                 "provider": "github",
-                "username": username,
-                "email": email,
+                "username": user.username,
+                "email": user.email,
                 "organization_id": org_id,
+                "installation_id": installation_id,
+                "setup_action": setup_action,
                 "user_agent": user_agent,
             }),
         )
@@ -100,10 +205,13 @@ async def github_auth_callback(
 
     await db.commit()
 
-    # Create opaque session
-    redirect_resp = RedirectResponse(settings.next_public_app_url, status_code=status.HTTP_302_FOUND)
+    # 7. Create opaque session and redirect to dashboard
+    base_app_url = settings.next_public_app_url.rstrip("/")
+    target_url = f"{base_app_url}/dashboard?installed=true" if installation_id else f"{base_app_url}/dashboard"
+    redirect_resp = RedirectResponse(target_url, status_code=status.HTTP_302_FOUND)
     await create_user_session(redirect_resp, user.id, org_id)
     return redirect_resp
+
 
 
 @router.post("/login", response_model=UserMeResponse, tags=["Authentication"])

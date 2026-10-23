@@ -83,3 +83,45 @@ async def verify_oauth_callback(code: str, state: str) -> tuple[dict, str]:
                 break
 
         return user_data, primary_email
+
+
+async def exchange_github_app_code(code: str) -> tuple[dict, str]:
+    """Exchange authorization code obtained during GitHub App installation.
+
+    When a GitHub App is configured with 'Request user authorization (OAuth) during installation',
+    GitHub redirects to the setup/callback URL with ?code=...&installation_id=...&setup_action=install.
+    In this installation flow, no PKCE challenge was initiated by the client, so credentials
+    are exchanged directly using client_id + client_secret + code.
+    """
+    settings = get_settings()
+    async with httpx.AsyncClient(timeout=15.0) as http:
+        token_resp = await http.post(
+            "https://github.com/login/oauth/access_token",
+            json={
+                "client_id": settings.github_client_id,
+                "client_secret": settings.github_client_secret,
+                "code": code,
+            },
+            headers={"Accept": "application/json"},
+        )
+        token_data = token_resp.json()
+        access_token = token_data.get("access_token")
+        if not access_token:
+            err = token_data.get("error_description") or token_data.get("error") or "no access token"
+            raise ValueError(f"GitHub App code exchange failed: {err}")
+
+        headers = {"Authorization": f"Bearer {access_token}", "Accept": "application/vnd.github.v3+json"}
+        user_resp = await http.get("https://api.github.com/user", headers=headers)
+        user_data = user_resp.json()
+
+        email_resp = await http.get("https://api.github.com/user/emails", headers=headers)
+        emails = email_resp.json() if email_resp.is_success else []
+
+        primary_email = user_data.get("email") or ""
+        for em in emails:
+            if em.get("primary") and em.get("verified"):
+                primary_email = em.get("email")
+                break
+
+        return user_data, primary_email
+
