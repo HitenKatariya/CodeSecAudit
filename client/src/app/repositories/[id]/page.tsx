@@ -98,7 +98,7 @@ export default function RepositoryDetailPage() {
         </div>
         <div className="flex items-center gap-2">
           <span className="badge badge-passed"><ShieldCheckIcon size={14} className="mr-1" />Branch Protection Active</span>
-          <a href={`https://github.com/example/${repo.name}`} target="_blank" rel="noreferrer">
+          <a href={`https://github.com/${repo.name}`} target="_blank" rel="noreferrer">
             <Button variant="secondary" size="sm" icon={<GitHubIcon size={14} />}>Open in GitHub ↗</Button>
           </a>
         </div>

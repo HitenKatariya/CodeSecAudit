@@ -71,12 +71,17 @@ export default function PRDetailPage() {
         </div>
 
         <a
-          href={`https://github.com/example/${pr.repository}/pull/${pr.pr_number}`}
+          href={
+            pr.pr_url ||
+            (pr.repository.includes("/")
+              ? `https://github.com/${pr.repository}/pull/${pr.pr_number}`
+              : `https://github.com/OMCHOKSI108/CodeSecurityAuditAgent/pull/${pr.pr_number}`)
+          }
           target="_blank"
           rel="noreferrer"
         >
           <Button variant="secondary" size="md" icon={<GitHubIcon size={16} />}>
-            Open in GitHub ↗
+            Open Review in GitHub ↗
           </Button>
         </a>
       </div>
@@ -96,17 +101,17 @@ export default function PRDetailPage() {
         </div>
 
         <MetricCard
-          label="Security Score"
-          value={pr.security_score}
-          suffix="/ 100"
+          label="CVSS Risk Score"
+          value={pr.security_score.toFixed(2)}
+          suffix="/ 10.0"
           severity={
-            pr.security_score >= 85
-              ? "passed"
-              : pr.security_score >= 70
+            pr.security_score >= 7.0
+              ? "critical"
+              : pr.security_score >= 4.0
               ? "medium"
-              : "critical"
+              : "passed"
           }
-          subtitle="Based on severity weights"
+          subtitle="Severity-weighted CVSS risk score"
         />
 
         <div className="metric-card">

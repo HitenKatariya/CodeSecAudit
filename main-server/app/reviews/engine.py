@@ -100,14 +100,29 @@ def _build_suppression_map(lines: list[str]) -> dict[int, Optional[set[str]]]:
     return suppressed
 
 
-def scan_source_code(code: str, file_path: Optional[str] = None) -> list[dict[str, Any]]:
+def scan_diff_lines(
+    lines_with_numbers: list[tuple[int, str]],
+    file_path: Optional[str] = None
+) -> list[dict[str, Any]]:
+    """Scan line tuples (line_number, line_content) preserving accurate git diff line coordinates."""
     findings = []
     rule_counts: dict[str, int] = {}
     seen = set()
-    lines = code.splitlines(keepends=False)
-    suppressions = _build_suppression_map(lines)
 
-    for line_no, line in enumerate(lines, start=1):
+    suppressed: dict[int, Optional[set[str]]] = {}
+    for idx, (line_no, line) in enumerate(lines_with_numbers):
+        stripped = line.strip()
+        if not stripped:
+            continue
+        if "codesec-ignore-next-line" in stripped:
+            m = re.search(r"codesec-ignore-next-line\s*:\s*(CWE-\d+)", stripped)
+            next_line_no = lines_with_numbers[idx + 1][0] if idx + 1 < len(lines_with_numbers) else line_no + 1
+            suppressed.setdefault(next_line_no, set()).add(m.group(1)) if m else suppressed.update({next_line_no: None})
+        elif "codesec-ignore" in stripped:
+            m = re.search(r"codesec-ignore\s*:\s*(CWE-\d+)", stripped)
+            suppressed.setdefault(line_no, set()).add(m.group(1)) if m else suppressed.update({line_no: None})
+
+    for line_no, line in lines_with_numbers:
         if len(findings) >= MAX_TOTAL_FINDINGS:
             break
         stripped = line.strip()
@@ -121,8 +136,8 @@ def scan_source_code(code: str, file_path: Optional[str] = None) -> list[dict[st
             for pattern in rule["patterns"]:
                 if re.search(pattern, stripped, re.IGNORECASE):
                     cwe = rule["cwe_id"]
-                    if line_no in suppressions:
-                        sc = suppressions[line_no]
+                    if line_no in suppressed:
+                        sc = suppressed[line_no]
                         if sc is None or cwe in sc:
                             continue
 
@@ -144,3 +159,9 @@ def scan_source_code(code: str, file_path: Optional[str] = None) -> list[dict[st
                     break
 
     return findings
+
+
+def scan_source_code(code: str, file_path: Optional[str] = None) -> list[dict[str, Any]]:
+    """Scan raw source code string with 1-based sequential line numbering."""
+    lines_with_numbers = list(enumerate(code.splitlines(keepends=False), start=1))
+    return scan_diff_lines(lines_with_numbers, file_path=file_path)

@@ -106,7 +106,7 @@ export default function FindingDetailPage() {
 
         <div className="flex items-center gap-2 flex-wrap">
           <a
-            href={`https://github.com/example/${finding.repository}/blob/main/${finding.file_path}#L${finding.line_number}`}
+            href={`https://github.com/${finding.repository}/blob/main/${finding.file_path}#L${finding.line_number}`}
             target="_blank"
             rel="noreferrer"
           >

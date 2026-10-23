@@ -1,17 +1,15 @@
 # CodeSecAudit AI
 
-**Developed by Hiten Katariya** (`hitenvk22@gmail.com`)
-
 Enterprise AI Pull Request Reviewer for Security, Code Quality, and RAG-based Secure Coding Guidance
 
-CodeSecAudit AI acts like an AI senior security engineer inside GitHub pull requests, detecting risky code, posting inline comments, suggesting fixes, and tracking review analytics before code is merged.
+CodeSecAudit AI acts like an AI senior engineer inside GitHub pull requests, detecting risky code, posting inline comments, suggesting fixes, and tracking review analytics before code is merged.
 
-[![Author: Hiten Katariya](https://img.shields.io/badge/Author-Hiten%20Katariya-blue)](https://github.com/HitenKatariya)
-[![Python](https://img.shields.io/badge/Python-3.12+-blue)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.141+-009688)](https://fastapi.tiangolo.com/)
+[![Python](https://img.shields.io/badge/Python-3.11+-blue)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688)](https://fastapi.tiangolo.com/)
 [![Docker](https://img.shields.io/badge/Docker-compose-2496ED)](https://docs.docker.com/compose/)
-[![Hugging Face Dataset](https://img.shields.io/badge/HF-Dataset-FFD21E)](https://huggingface.co/datasets/hitenvk22/CodeSecAudit-RAG-Shuffled)
-[![Kaggle](https://img.shields.io/badge/Kaggle-Notebook-20BEFF)](https://www.kaggle.com/code/hitenkatariya/codesecaudit-rag)
+[![Hugging Face Dataset](https://img.shields.io/badge/HF-Dataset-FFD21E)](https://huggingface.co/datasets/OMCHOKSI108/CodeSecAudit-RAG)
+[![Hugging Face Space](https://img.shields.io/badge/HF-RAG%20Service-FFD21E)](https://OMCHOKSI108-codereview-agent.hf.space)
+[![Kaggle](https://img.shields.io/badge/Kaggle-Notebook-20BEFF)](https://www.kaggle.com/code/omchoksi04/codereview)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
@@ -20,21 +18,21 @@ CodeSecAudit AI acts like an AI senior security engineer inside GitHub pull requ
 
 | Asset | Link |
 |---|---|
-| Author | **Hiten Katariya** ([GitHub](https://github.com/HitenKatariya)) |
-| Prototype Notebook (Kaggle) | https://www.kaggle.com/code/hitenkatariya/codesecaudit-rag |
-| Vulnerability Dataset (Hugging Face) | https://huggingface.co/datasets/hitenvk22/CodeSecAudit-RAG-Shuffled |
-| GitHub Repository | https://github.com/HitenKatariya/CodeSecAudit |
-| GitHub App | https://github.com/apps/codesecurityaudit-app |
-| App (Next.js SaaS Client) | https://codesec-client.onrender.com |
-| Core API (main-server) | https://codesec-main.onrender.com |
-| RAG Knowledge Base Service | https://codesec-rag.onrender.com |
+| Kaggle Notebook | https://www.kaggle.com/code/omchoksi04/codereview |
+| Hugging Face Dataset | https://huggingface.co/datasets/OMCHOKSI108/CodeSecAudit-RAG |
+| RAG Service (live) | https://OMCHOKSI108-codereview-agent.hf.space |
+| GitHub Repo | https://github.com/OMCHOKSI108/CodeSecurityAuditAgent |
+| GitHub App | https://github.com/apps/codesecaudit-ai |
+| App (Client) | https://codesec-client.onrender.com |
+| API (main-server) | https://codesec-main.onrender.com |
+| RAG Service | https://codesec-rag.onrender.com |
 
 ---
 
 ## Screenshots
 
 ### PR Review — Inline Comments 
-Link : https://github.com/HitenKatariya/CodeSecAudit/pull/4
+Link : https://github.com/OMCHOKSI108/CodeSecurityAuditAgent/pull/4
 ![PR Review Bugs](docs/screenshots/github_pr_review_bugs.png)
 *Detected vulnerabilities with inline PR comments*
 
@@ -43,7 +41,7 @@ Link : https://github.com/HitenKatariya/CodeSecAudit/pull/4
 
 ### Dataset
 
-[![HF Dataset](docs/screenshots/hf-dataset.png)](https://huggingface.co/datasets/hitenvk22/CodeSecAudit-RAG-Shuffled)
+[![HF Dataset](docs/screenshots/hf-dataset.png)](https://huggingface.co/datasets/OMCHOKSI108/CodeSecAudit-RAG)
 *CodeSecAudit-RAG dataset on Hugging Face — click to explore*
 
 ### API & Services
@@ -91,7 +89,7 @@ If you prefer not to use the GitHub App, you can also trigger reviews via GitHub
 
 ```yaml
 - name: Run CodeSecAudit Review
-  uses: HitenKatariya/CodeSecAudit/.github/actions/review@main
+  uses: OMCHOKSI108/codesec-audit-dataset/.github/actions/review@main
 ```
 
 ---
@@ -170,7 +168,7 @@ The custom dataset powers both rule-based evaluation and the RAG retrieval servi
 | Similarity | Cosine |
 | Sources | CodeXGLUE + OWASP Benchmark Python + OWASP Cheat Sheet Series |
 
-**Hugging Face Dataset**: https://huggingface.co/datasets/hitenvk22/CodeSecAudit-RAG-Shuffled
+**Hugging Face Dataset**: https://huggingface.co/datasets/OMCHOKSI108/CodeSecAudit-RAG
 
 **Build the index locally**:
 ```bash
@@ -183,7 +181,7 @@ python scripts/build_rag_index.py
 
 Explore the dataset, RAG corpus, and a prototype Critic → Retriever → Fixer pipeline on Kaggle:
 
-https://www.kaggle.com/code/hitenkatariya/codesecaudit-rag
+https://www.kaggle.com/code/omchoksi04/codereview
 
 The notebook demonstrates:
 - Dataset exploration (28,548 records from CodeXGLUE + OWASP)
@@ -251,7 +249,7 @@ Full documentation: [docs/github_action.md](docs/github_action.md)
 
 The RAG retrieval service runs as a **separate Hugging Face Space** to keep the main deployment lightweight (~500 MB).
 
-**Live endpoint**: https://codesec-rag.onrender.com
+**Live endpoint**: https://OMCHOKSI108-codereview-agent.hf.space
 
 | Endpoint | Method | Description |
 |---|---|---|
@@ -263,7 +261,7 @@ The RAG retrieval service runs as a **separate Hugging Face Space** to keep the 
 ```env
 CODESEC_ENABLE_RAG=true
 CODESEC_RAG_MODE=remote
-CODESEC_RAG_SERVICE_URL=https://codesec-rag.onrender.com
+CODESEC_RAG_SERVICE_URL=https://OMCHOKSI108-codereview-agent.hf.space
 CODESEC_RAG_API_KEY=your-key-here
 ```
 
@@ -336,7 +334,7 @@ The user flow for the SaaS version:
 6. Limit reached → Resend email with upgrade prompt
 7. Contact owner for custom plans
 
-Owner contact: **hitenvk22@gmail.com**
+Owner contact: **omchoksi108@gmail.com**
 
 Current status:
 - [x] Datasets + RAG corpus
@@ -409,7 +407,6 @@ CodeSecAudit AI is a **defensive security tool**:
 
 ## Owner Contact
 
-For questions, custom plans, or enterprise security audits:
+For questions, custom plans, or limit increases:
 
-**Hiten Katariya** — [hitenvk22@gmail.com](mailto:hitenvk22@gmail.com)  
-GitHub: [@HitenKatariya](https://github.com/HitenKatariya)
+**omchoksi108@gmail.com**

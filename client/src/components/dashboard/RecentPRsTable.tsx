@@ -45,20 +45,20 @@ export function RecentPRsTable({ prs }: { prs: PullRequest[] }) {
     },
     {
       key: "security_score",
-      header: "Score",
+      header: "CVSS Risk",
       render: (pr) => (
         <span
           className="font-mono font-bold text-xs"
           style={{
             color:
-              pr.security_score >= 85
-                ? "var(--pass-color)"
-                : pr.security_score >= 70
+              pr.security_score >= 7.0
+                ? "var(--crit-color)"
+                : pr.security_score >= 4.0
                 ? "var(--med-color)"
-                : "var(--crit-color)",
+                : "var(--pass-color)",
           }}
         >
-          {pr.security_score}/100
+          {pr.security_score.toFixed(2)} / 10.0
         </span>
       ),
     },
@@ -96,6 +96,29 @@ export function RecentPRsTable({ prs }: { prs: PullRequest[] }) {
           {pr.scanned_at}
         </span>
       ),
+    },
+    {
+      key: "github_link",
+      header: "GitHub",
+      align: "right",
+      render: (pr) => {
+        const ghUrl =
+          pr.pr_url ||
+          (pr.repository.includes("/")
+            ? `https://github.com/${pr.repository}/pull/${pr.pr_number}`
+            : undefined);
+        return ghUrl ? (
+          <a
+            href={ghUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs hover:underline flex items-center gap-1 font-mono"
+            style={{ color: "var(--accent)" }}
+          >
+            PR #{pr.pr_number} ↗
+          </a>
+        ) : null;
+      },
     },
   ];
 

@@ -56,13 +56,23 @@ export default function PullRequestsPage() {
     },
     {
       key: "security_score",
-      header: "Score",
+      header: "CVSS Risk",
       render: (pr) => (
         <div className="flex items-center gap-1 font-mono text-xs">
-          <span className="font-bold" style={{ color: pr.security_score >= 85 ? "var(--pass-color)" : pr.security_score >= 70 ? "var(--med-color)" : "var(--crit-color)" }}>
-            {pr.security_score}
+          <span
+            className="font-bold"
+            style={{
+              color:
+                pr.security_score >= 7.0
+                  ? "var(--crit-color)"
+                  : pr.security_score >= 4.0
+                  ? "var(--med-color)"
+                  : "var(--pass-color)",
+            }}
+          >
+            {pr.security_score.toFixed(2)}
           </span>
-          <span className="text-[11px] text-dim">/ 100</span>
+          <span className="text-[11px] text-dim">/ 10.0</span>
         </div>
       ),
     },
@@ -89,11 +99,31 @@ export default function PullRequestsPage() {
       key: "actions",
       header: "",
       align: "right",
-      render: (pr) => (
-        <Link href={`/pull-requests/${pr.pr_number}`}>
-          <Button variant="ghost" size="sm">Review Audit →</Button>
-        </Link>
-      ),
+      render: (pr) => {
+        const ghUrl =
+          pr.pr_url ||
+          (pr.repository.includes("/")
+            ? `https://github.com/${pr.repository}/pull/${pr.pr_number}`
+            : undefined);
+        return (
+          <div className="flex items-center justify-end gap-2">
+            {ghUrl && (
+              <a
+                href={ghUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs hover:underline font-mono"
+                style={{ color: "var(--accent)" }}
+              >
+                GitHub ↗
+              </a>
+            )}
+            <Link href={`/pull-requests/${pr.pr_number}`}>
+              <Button variant="ghost" size="sm">Audit Details →</Button>
+            </Link>
+          </div>
+        );
+      },
     },
   ];
 

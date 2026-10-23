@@ -30,12 +30,47 @@ async def list_reviews(
     result = await db.execute(stmt)
     reviews = result.scalars().all()
 
+    if not reviews:
+        return []
+
+    # Map repository IDs to repo full names
+    repo_ids = {r.repository_id for r in reviews}
+    repo_stmt = select(Repository).where(Repository.id.in_(repo_ids))
+    repo_results = (await db.execute(repo_stmt)).scalars().all()
+    repo_name_map = {r.id: r.full_name for r in repo_results}
+
+    # Load findings for these reviews
+    review_ids = [r.id for r in reviews]
+    findings_stmt = select(Finding).where(Finding.review_id.in_(review_ids))
+    findings_results = (await db.execute(findings_stmt)).scalars().all()
+
+    findings_by_review: dict[str, list[FindingItem]] = {r.id: [] for r in reviews}
+    for f in findings_results:
+        findings_by_review.setdefault(f.review_id, []).append(
+            FindingItem(
+                id=f.id,
+                review_id=f.review_id,
+                cwe_id=f.cwe_id,
+                severity=f.severity,
+                title=f.title,
+                file_path=f.file_path,
+                line_number=f.line_number,
+                code_snippet=f.code_snippet,
+                suggested_fix=f.suggested_fix,
+                status=getattr(f, "status", None) or "open",
+            )
+        )
+
     response = []
     for r in reviews:
+        repo_name = repo_name_map.get(r.repository_id, r.repository_id)
+        pr_link = f"https://github.com/{repo_name}/pull/{r.pr_number}" if r.pr_number and "/" in repo_name else None
         response.append(
             ReviewDetailResponse(
                 id=r.id,
                 repository_id=r.repository_id,
+                repo_full_name=repo_name,
+                pr_url=pr_link,
                 pr_number=r.pr_number,
                 commit_sha=r.commit_sha,
                 risk_score=r.risk_score,
@@ -43,7 +78,7 @@ async def list_reviews(
                 summary=r.summary,
                 guidance_available=r.guidance_available,
                 created_at=r.created_at.isoformat(),
-                findings=[],
+                findings=findings_by_review.get(r.id, []),
             )
         )
     return response
@@ -74,6 +109,7 @@ async def get_review_detail(
     repo_stmt = select(Repository).where(Repository.id == review.repository_id)
     repo = (await db.execute(repo_stmt)).scalar_one_or_none()
     repo_name = repo.full_name if repo else review.repository_id
+    pr_link = f"https://github.com/{repo_name}/pull/{review.pr_number}" if review.pr_number and "/" in repo_name else None
 
     finding_stmt = select(Finding).where(Finding.review_id == review.id)
     findings = (await db.execute(finding_stmt)).scalars().all()
@@ -96,7 +132,9 @@ async def get_review_detail(
 
     return ReviewDetailResponse(
         id=review.id,
-        repository_id=repo_name,
+        repository_id=review.repository_id,
+        repo_full_name=repo_name,
+        pr_url=pr_link,
         pr_number=review.pr_number,
         commit_sha=review.commit_sha,
         risk_score=review.risk_score,

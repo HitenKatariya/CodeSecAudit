@@ -57,9 +57,11 @@ class UpdateFindingStatusRequest(BaseModel):
 class ReviewDetailResponse(BaseModel):
     id: str
     repository_id: str
+    repo_full_name: Optional[str] = None
+    pr_url: Optional[str] = None
     pr_number: int
     commit_sha: str
-    risk_score: int
+    risk_score: float = 0.0
     verdict: str
     summary: str
     guidance_available: bool

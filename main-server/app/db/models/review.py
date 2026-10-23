@@ -1,7 +1,7 @@
 """Review jobs, reviews, and findings database models."""
 
 import uuid
-from sqlalchemy import Boolean, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base, TimestampMixin
 
@@ -27,7 +27,7 @@ class Review(Base, TimestampMixin):
     job_id: Mapped[str] = mapped_column(String(36), ForeignKey("review_jobs.id", ondelete="SET NULL"), nullable=True)
     pr_number: Mapped[int] = mapped_column(Integer, nullable=False)
     commit_sha: Mapped[str] = mapped_column(String(64), nullable=False)
-    risk_score: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    risk_score: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
     verdict: Mapped[str] = mapped_column(String(32), default="APPROVE", nullable=False)  # APPROVE, WARNING, REQUEST_CHANGES
     summary: Mapped[str] = mapped_column(Text, nullable=False)
     guidance_available: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)

@@ -21,19 +21,19 @@ _SEVERITY_RANK = {"critical": 3, "high": 2, "medium": 1, "low": 0}
 
 def format_pr_comment(
     verdict: str,
-    risk_score: int,
+    risk_score: float,
     findings: list[dict[str, Any]],
     commit_sha: str,
 ) -> str:
     badge = _VERDICT_BADGE.get(verdict, verdict)
     short_sha = commit_sha[:12] if commit_sha else "HEAD"
 
-    # Risk assessment description
-    if risk_score >= 60:
-        risk_level_desc = "🚨 **Critical Security Risk** — Exploitable vulnerabilities present. Immediate remediation required."
+    # Risk assessment description according to CVSS v3.1 thresholds
+    if risk_score >= 7.0:
+        risk_level_desc = "🚨 **Critical / High Security Risk** — Severe or exploitable vulnerabilities present. Immediate remediation required."
         merge_gate = "🚫 **MERGE BLOCKED:** High-risk vulnerabilities must be remediated or explicitly suppressed before merging."
-    elif risk_score >= 20:
-        risk_level_desc = "⚠️ **Elevated Risk** — Security weaknesses identified that may introduce vulnerabilities into production."
+    elif risk_score >= 4.0:
+        risk_level_desc = "⚠️ **Elevated Medium Risk** — Security weaknesses identified that may introduce vulnerabilities into production."
         merge_gate = "⚠️ **MERGE CAUTION:** Security review recommended before deployment."
     else:
         risk_level_desc = "🛡️ **Low / Acceptable Risk** — No critical or high severity security vulnerabilities detected."
@@ -42,7 +42,7 @@ def format_pr_comment(
     lines = [
         "## 🛡️ CodeSecAudit AI — Comprehensive Security Audit Report",
         "",
-        f"> **Verdict:** {badge} &nbsp;|&nbsp; **Risk Score:** `{risk_score}/100` &nbsp;|&nbsp; **Target Commit:** `{short_sha}`",
+        f"> **Verdict:** {badge} &nbsp;|&nbsp; **CVSS Security Risk Score:** `{risk_score:.2f} / 10.0` &nbsp;|&nbsp; **Target Commit:** `{short_sha}`",
         ">",
         f"> {risk_level_desc}",
         ">",

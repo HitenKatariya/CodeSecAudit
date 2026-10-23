@@ -41,6 +41,8 @@ export interface PullRequest {
   pr_number: number;
   title: string;
   repository: string;
+  repo_full_name?: string;
+  pr_url?: string;
   author: string;
   author_avatar?: string;
   security_score: number;
@@ -112,6 +114,8 @@ export interface ReportSummary {
 export interface ReviewRecord {
   id: string;
   repository_id: string;
+  repo_full_name?: string;
+  pr_url?: string;
   pr_number: number;
   commit_sha: string;
   risk_score: number;

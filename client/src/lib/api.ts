@@ -97,13 +97,17 @@ export async function fetchPullRequests(): Promise<PullRequest[]> {
       const high = rFindings.filter((f) => f.severity === "high").length;
       const med = rFindings.filter((f) => f.severity === "medium").length;
       const low = rFindings.filter((f) => f.severity === "low").length;
+      const repoFullName = r.repo_full_name || r.repository_id || "OMCHOKSI108/CodeSecurityAuditAgent";
+      const prUrl = r.pr_url || (repoFullName.includes("/") ? `https://github.com/${repoFullName}/pull/${r.pr_number}` : undefined);
       return {
         id: r.id,
         pr_number: r.pr_number || 1,
         title: `Security Audit PR #${r.pr_number || 1}`,
-        repository: r.repository_id || "CodeSecurityAuditAgent",
+        repository: repoFullName,
+        repo_full_name: repoFullName,
+        pr_url: prUrl,
         author: "GitHub Author",
-        security_score: Math.max(0, 100 - r.risk_score),
+        security_score: Number(r.risk_score != null ? r.risk_score : 0),
         findings_summary: { critical: crit, high, medium: med, low },
         gate_status: r.verdict === "APPROVE" ? "PASSED" : "BLOCKED",
         scanned_at: new Date(r.created_at).toLocaleDateString(),
@@ -124,13 +128,17 @@ export async function fetchPullRequestById(id: string): Promise<PullRequest | nu
     const high = review.findings.filter((f) => f.severity === "high").length;
     const med = review.findings.filter((f) => f.severity === "medium").length;
     const low = review.findings.filter((f) => f.severity === "low").length;
+    const repoFullName = review.repo_full_name || review.repository_id || "OMCHOKSI108/CodeSecurityAuditAgent";
+    const prUrl = review.pr_url || (repoFullName.includes("/") ? `https://github.com/${repoFullName}/pull/${review.pr_number}` : undefined);
     return {
       id: review.id,
       pr_number: review.pr_number || 1,
       title: `Security Audit PR #${review.pr_number || 1}`,
-      repository: review.repository_id || "CodeSecurityAuditAgent",
+      repository: repoFullName,
+      repo_full_name: repoFullName,
+      pr_url: prUrl,
       author: "GitHub Author",
-      security_score: Math.max(0, 100 - review.risk_score),
+      security_score: Number(review.risk_score != null ? review.risk_score : 0),
       findings_summary: { critical: crit, high, medium: med, low },
       gate_status: review.verdict === "APPROVE" ? "PASSED" : "BLOCKED",
       scanned_at: new Date(review.created_at).toLocaleDateString(),

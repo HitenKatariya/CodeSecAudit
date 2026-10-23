@@ -10,7 +10,7 @@ from app.db.models.review import Finding, Review, ReviewJob
 from app.db.session import get_session_factory
 from app.jobs.queue import dequeue_review_job
 from app.reviews.diff_parser import extract_added_lines, split_diff_by_file
-from app.reviews.engine import scan_source_code
+from app.reviews.engine import scan_diff_lines, scan_source_code
 from app.reviews.pr_agent_client import AI_FINDING_CWE, review_diff_with_pr_agent
 from app.reviews.rag_client import query_rag_guidance
 from app.reviews.report_formatter import format_pr_comment
@@ -56,12 +56,12 @@ async def process_single_job(job_data: dict) -> None:
                     await db.commit()
                 return
 
-        # 2. Run deterministic static scans
+        # 2. Run deterministic static scans with exact diff line coordinate mapping
         if is_diff:
             findings_raw = []
             for path, patch in split_diff_by_file(code_content).items():
-                added_text = "\n".join(content for _, content in extract_added_lines(patch))
-                findings_raw.extend(scan_source_code(added_text, file_path=path))
+                added_lines = extract_added_lines(patch)
+                findings_raw.extend(scan_diff_lines(added_lines, file_path=path))
         else:
             findings_raw = scan_source_code(code_content, file_path=file_path)
 

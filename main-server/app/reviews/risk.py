@@ -235,15 +235,67 @@ CWE_DETAILS: dict[str, dict[str, Any]] = {
 }
 
 
-def calculate_risk_score(findings: list[dict[str, Any]]) -> int:
-    total = sum(SEVERITY_POINTS.get(f.get("severity", "medium"), 10) for f in findings)
-    return min(total, 100)
+CVSS_BASE_SCORES: dict[str, float] = {
+    "CWE-78": 9.80,   # OS Command Injection (Critical)
+    "CWE-89": 9.40,   # SQL Injection (Critical)
+    "CWE-94": 9.80,   # Code Injection via eval (Critical)
+    "CWE-798": 8.90,  # Hardcoded Secrets (High/Critical)
+    "CWE-918": 8.60,  # SSRF (High)
+    "CWE-502": 8.80,  # Insecure Deserialization (High)
+    "CWE-22": 7.50,   # Path Traversal (High)
+    "CWE-328": 7.50,  # Weak Hashing (High)
+    "CWE-352": 6.50,  # CSRF (Medium)
+    "CWE-79": 6.10,   # XSS (Medium)
+}
+
+DEFAULT_SEVERITY_CVSS: dict[str, float] = {
+    "critical": 9.20,
+    "high": 7.80,
+    "medium": 5.40,
+    "low": 2.54,
+}
 
 
-def decide_verdict(risk_score: int) -> str:
-    if risk_score >= 60:
+def get_finding_cvss(finding: dict[str, Any]) -> float:
+    """Return realistic CVSS base score (0.0 - 10.0) for a security finding."""
+    cwe = finding.get("cwe_id", "")
+    if cwe in CVSS_BASE_SCORES:
+        return CVSS_BASE_SCORES[cwe]
+    sev = str(finding.get("severity", "medium")).lower()
+    return DEFAULT_SEVERITY_CVSS.get(sev, 5.0)
+
+
+def calculate_risk_score(findings: list[dict[str, Any]]) -> float:
+    """Calculate realistic composite CVSS risk score from 0.00 to 10.00.
+
+    Produces realistic scores with two decimals (e.g. 9.06, 8.76, 2.54).
+    Uses maximum-severity anchoring with diminishing marginal compounding.
+    """
+    if not findings:
+        return 0.0
+
+    scores = sorted([get_finding_cvss(f) for f in findings], reverse=True)
+    max_score = scores[0]
+
+    if len(scores) == 1:
+        return round(max_score, 2)
+
+    # Multi-finding compounding model:
+    # Additional vulnerabilities compound risk into the remaining headroom up to 10.0
+    compounding = 1.0
+    for s in scores[1:]:
+        compounding *= (1.0 - (s / 35.0))
+    marginal_factor = 1.0 - compounding
+
+    composite = max_score + ((10.0 - max_score) * 0.75 * marginal_factor)
+    return round(min(composite, 10.0), 2)
+
+
+def decide_verdict(risk_score: float) -> str:
+    """Map CVSS risk score to PR gate verdict."""
+    if risk_score >= 7.00:
         return "REQUEST_CHANGES"
-    if risk_score >= 20:
+    if risk_score >= 4.00:
         return "WARNING"
     return "APPROVE"
 

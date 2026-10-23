@@ -1,25 +1,34 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
-
-import { fetchMe } from "@/lib/api";
+import { Badge, GateBadge } from "@/components/ui/Badge";
+import { GitHubIcon } from "@/components/ui/Icons";
+import { DataTable, Column } from "@/components/ui/DataTable";
+import { fetchMe, fetchPullRequests } from "@/lib/api";
+import { UserProfile, PullRequest } from "@/types";
 
 export default function SettingsPage() {
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [prs, setPrs] = useState<PullRequest[]>([]);
   const [orgName, setOrgName] = useState("Acme Engineering");
   const [contactEmail, setContactEmail] = useState("security@acme.corp");
   const [emailAlerts, setEmailAlerts] = useState(true);
   const [dailyDigest, setDailyDigest] = useState(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  React.useEffect(() => {
-    fetchMe().then((user) => {
-      if (user?.organization_name) setOrgName(user.organization_name);
-      if (user?.email) setContactEmail(user.email);
+  useEffect(() => {
+    fetchMe().then((u) => {
+      if (u) {
+        setUser(u);
+        if (u.organization_name) setOrgName(u.organization_name);
+        if (u.email) setContactEmail(u.email);
+      }
     });
+    fetchPullRequests().then(setPrs);
   }, []);
 
   const handleSave = (e: React.FormEvent) => {
@@ -27,6 +36,86 @@ export default function SettingsPage() {
     setToastMessage("Settings saved successfully.");
     setTimeout(() => setToastMessage(null), 3000);
   };
+
+  const reviewColumns: Column<PullRequest>[] = [
+    {
+      key: "title",
+      header: "Pull Request",
+      render: (pr) => (
+        <Link
+          href={`/pull-requests/${pr.pr_number}`}
+          className="font-medium hover:underline flex items-center gap-1.5"
+          style={{ color: "var(--text-main)" }}
+        >
+          <span className="font-mono text-xs" style={{ color: "var(--accent)" }}>
+            #{pr.pr_number}
+          </span>
+          <span>{pr.title}</span>
+        </Link>
+      ),
+    },
+    {
+      key: "repository",
+      header: "Repository",
+      render: (pr) => (
+        <span className="font-mono text-xs text-muted">{pr.repository}</span>
+      ),
+    },
+    {
+      key: "security_score",
+      header: "CVSS Risk",
+      render: (pr) => (
+        <span
+          className="font-mono font-bold text-xs"
+          style={{
+            color:
+              pr.security_score >= 7.0
+                ? "var(--crit-color)"
+                : pr.security_score >= 4.0
+                ? "var(--med-color)"
+                : "var(--pass-color)",
+          }}
+        >
+          {pr.security_score.toFixed(2)} / 10.0
+        </span>
+      ),
+    },
+    {
+      key: "gate_status",
+      header: "Gate Status",
+      render: (pr) => <GateBadge status={pr.gate_status} />,
+    },
+    {
+      key: "actions",
+      header: "Review Links",
+      align: "right",
+      render: (pr) => {
+        const ghUrl =
+          pr.pr_url ||
+          (pr.repository.includes("/")
+            ? `https://github.com/${pr.repository}/pull/${pr.pr_number}`
+            : `https://github.com/OMCHOKSI108/CodeSecurityAuditAgent/pull/${pr.pr_number}`);
+        return (
+          <div className="flex items-center justify-end gap-2">
+            <Link href={`/pull-requests/${pr.pr_number}`}>
+              <Button variant="ghost" size="sm">
+                Audit Details →
+              </Button>
+            </Link>
+            <a
+              href={ghUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs hover:underline flex items-center gap-1 font-mono font-semibold"
+              style={{ color: "var(--accent)" }}
+            >
+              GitHub PR #{pr.pr_number} ↗
+            </a>
+          </div>
+        );
+      },
+    },
+  ];
 
   return (
     <div className="space-y">
@@ -53,6 +142,75 @@ export default function SettingsPage() {
           </button>
         </div>
       )}
+
+      {/* User Identity & GitHub Account */}
+      <Card
+        title="GitHub User Identity"
+        description="Authenticated GitHub profile and security auditor credentials"
+      >
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-3">
+            <div
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: "50%",
+                background: "var(--accent-glow)",
+                border: "1px solid var(--accent)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "1.2rem",
+              }}
+            >
+              🛡️
+            </div>
+            <div>
+              <div className="font-bold text-sm text-main flex items-center gap-2">
+                <span>@{user?.username || "authenticated-user"}</span>
+                <span className="badge badge-passed text-[10px]">Active</span>
+              </div>
+              <div className="text-xs text-muted font-mono">
+                Role: {user?.organization_role || "Owner"} &bull; Org: {user?.organization_name || orgName}
+              </div>
+            </div>
+          </div>
+
+          {user?.username && (
+            <a
+              href={`https://github.com/${user.username}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <Button variant="secondary" size="sm" icon={<GitHubIcon size={14} />}>
+                View GitHub Profile ↗
+              </Button>
+            </a>
+          )}
+        </div>
+      </Card>
+
+      {/* Recent PR Audits & Full Reviews */}
+      <Card
+        title="Recent Pull Request Audits & Reviews"
+        description="Review records with CVSS scores and direct links to GitHub review comments"
+        actions={
+          <Link
+            href="/pull-requests"
+            className="text-xs hover:underline"
+            style={{ color: "var(--accent)" }}
+          >
+            All Pull Requests →
+          </Link>
+        }
+      >
+        <DataTable
+          columns={reviewColumns}
+          data={prs}
+          keyExtractor={(pr) => pr.id}
+          emptyMessage="No pull request audits recorded for this profile yet."
+        />
+      </Card>
 
       {/* Workspace Profile */}
       <Card
