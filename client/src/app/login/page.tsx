@@ -32,8 +32,8 @@ const FEATURES = [
 
 export default function LoginPage() {
   const router = useRouter();
-  const [username, setUsername] = useState("omchoksi");
-  const [email, setEmail] = useState("om@codesec.ai");
+  const [username, setUsername] = useState("admin");
+  const [email, setEmail] = useState("admin@codesec.ai");
   const [loading, setLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -173,46 +173,38 @@ export default function LoginPage() {
 
           <form onSubmit={handleDirectLogin} style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}>
             <div>
-              <label style={{ display: "block", fontSize: "0.75rem", color: "var(--text-muted)", marginBottom: "0.3rem" }}>
+              <label style={{ display: "block", fontSize: "0.75rem", color: "var(--text-muted)", marginBottom: "0.3rem", fontFamily: "var(--font-mono)" }}>
                 Username / Handle
               </label>
               <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="e.g. HitenKatariya"
+                placeholder="e.g. admin or security-lead"
                 required
+                className="form-input w-full"
                 style={{
                   width: "100%",
-                  padding: "0.6rem 0.75rem",
-                  borderRadius: "6px",
-                  background: "var(--bg-card, #0f172a)",
-                  border: "1px solid var(--border-subtle, #334155)",
-                  color: "var(--text-main, #f8fafc)",
+                  padding: "0.6rem 0.85rem",
                   fontSize: "0.85rem",
-                  outline: "none",
                 }}
               />
             </div>
 
             <div>
-              <label style={{ display: "block", fontSize: "0.75rem", color: "var(--text-muted)", marginBottom: "0.3rem" }}>
+              <label style={{ display: "block", fontSize: "0.75rem", color: "var(--text-muted)", marginBottom: "0.3rem", fontFamily: "var(--font-mono)" }}>
                 Email Address
               </label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="e.g. hitenvk22@gmail.com"
+                placeholder="e.g. security@company.com"
+                className="form-input w-full"
                 style={{
                   width: "100%",
-                  padding: "0.6rem 0.75rem",
-                  borderRadius: "6px",
-                  background: "var(--bg-card, #0f172a)",
-                  border: "1px solid var(--border-subtle, #334155)",
-                  color: "var(--text-main, #f8fafc)",
+                  padding: "0.6rem 0.85rem",
                   fontSize: "0.85rem",
-                  outline: "none",
                 }}
               />
             </div>
@@ -229,9 +221,9 @@ export default function LoginPage() {
           </form>
 
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", margin: "0.25rem 0" }}>
-            <div style={{ flex: 1, height: "1px", background: "var(--border-subtle, #334155)" }} />
-            <span style={{ fontSize: "0.7rem", color: "var(--text-dim)", textTransform: "uppercase" }}>or</span>
-            <div style={{ flex: 1, height: "1px", background: "var(--border-subtle, #334155)" }} />
+            <div style={{ flex: 1, height: "1px", background: "var(--border-subtle)" }} />
+            <span style={{ fontSize: "0.7rem", color: "var(--text-dim)", textTransform: "uppercase", fontFamily: "var(--font-mono)" }}>or</span>
+            <div style={{ flex: 1, height: "1px", background: "var(--border-subtle)" }} />
           </div>
 
           <a href="/api/auth/github/start" className="w-full">
@@ -248,19 +240,19 @@ export default function LoginPage() {
           <div style={{ display: "flex", gap: "0.5rem" }}>
             <button
               type="button"
-              onClick={() => handleDirectLogin(undefined, "HitenKatariya", "hitenvk22@gmail.com")}
+              onClick={() => handleDirectLogin(undefined, "admin", "admin@codesec.ai")}
               className="btn btn-ghost btn-sm"
-              style={{ flex: 1, fontSize: "0.75rem", border: "1px dashed var(--border-subtle)" }}
+              style={{ flex: 1, fontSize: "0.75rem", border: "1px dashed var(--border-subtle)", fontFamily: "var(--font-mono)" }}
             >
-              ⚡ Quick Sign in (Hiten)
+              ⚡ Quick Access (Admin)
             </button>
             <button
               type="button"
-              onClick={() => handleDirectLogin(undefined, "omchoksi", "om@codesec.ai")}
+              onClick={() => handleDirectLogin(undefined, "security-lead", "lead@codesec.ai")}
               className="btn btn-ghost btn-sm"
-              style={{ flex: 1, fontSize: "0.75rem", border: "1px dashed var(--border-subtle)" }}
+              style={{ flex: 1, fontSize: "0.75rem", border: "1px dashed var(--border-subtle)", fontFamily: "var(--font-mono)" }}
             >
-              ⚡ Quick Sign in (Om)
+              ⚡ Quick Access (Auditor)
             </button>
           </div>
 

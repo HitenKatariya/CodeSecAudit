@@ -80,9 +80,8 @@ export function Sidebar({ user: propUser, onSignOut }: SidebarProps = {}) {
   }, [propUser]);
 
   const user = propUser !== undefined ? propUser : internalUser;
-  const initials = user?.username ? user.username.slice(0, 2).toUpperCase() : "CS";
-  const orgName = user?.organization_name || "Workspace";
-  const displayName = user?.username ? `${user.username} (${user.organization_role || "Member"})` : "User";
+  const orgName = user?.organization_name || "Enterprise Workspace";
+  const roleDisplay = user?.organization_role ? `${user.organization_role.charAt(0).toUpperCase() + user.organization_role.slice(1)}` : "Security Auditor";
 
   return (
     <aside className="app-sidebar">
@@ -90,7 +89,7 @@ export function Sidebar({ user: propUser, onSignOut }: SidebarProps = {}) {
         <span className="logo-badge">🛡️</span>
         <div>
           <div className="logo-text">CodeSecAudit AI</div>
-          <div style={{ fontSize: "0.75rem", color: "var(--text-dim)" }}>PR Security Gate</div>
+          <div style={{ fontSize: "0.75rem", color: "var(--text-dim)", fontFamily: "var(--font-mono)" }}>PR Security Gate</div>
         </div>
       </div>
 
@@ -119,18 +118,18 @@ export function Sidebar({ user: propUser, onSignOut }: SidebarProps = {}) {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "var(--pass-color)" }} />
-            <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>GitHub Connected</span>
+            <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>GitHub Connected</span>
           </div>
-          <span style={{ fontSize: "0.7rem", color: "var(--text-dim)", background: "rgba(255,255,255,0.05)", padding: "2px 6px", borderRadius: "4px" }}>Active</span>
+          <span style={{ fontSize: "0.7rem", color: "var(--text-dim)", background: "var(--bg-surface-hover)", border: "1px solid var(--border-subtle)", padding: "2px 6px", borderRadius: "4px", fontFamily: "var(--font-mono)" }}>Active</span>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "0.65rem", paddingTop: "0.5rem", borderTop: "1px solid var(--border-subtle)" }}>
-          <div style={{ width: "28px", height: "28px", borderRadius: "50%", background: "#1e293b", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.75rem", fontWeight: "bold", color: "var(--accent)" }}>
-            {initials}
+          <div style={{ width: "28px", height: "28px", borderRadius: "50%", background: "var(--bg-surface-hover)", border: "1px solid var(--border-light)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.8rem", color: "var(--text-main)" }}>
+            🛡️
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: "0.8rem", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{orgName}</div>
-            <div style={{ fontSize: "0.7rem", color: "var(--text-dim)" }}>{displayName}</div>
+            <div style={{ fontSize: "0.8rem", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "var(--text-main)" }}>{orgName}</div>
+            <div style={{ fontSize: "0.7rem", color: "var(--text-dim)", fontFamily: "var(--font-mono)" }}>{roleDisplay}</div>
           </div>
           {onSignOut && (
             <button

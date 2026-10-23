@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Sidebar } from "./Sidebar";
+import { ThemeToggle } from "./ThemeToggle";
 import Link from "next/link";
 import { fetchMe, logoutUser } from "@/lib/api";
 import { UserProfile } from "@/types";
@@ -46,9 +47,16 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     router.replace("/login");
   };
 
-  // On login route, render standalone auth container without sidebar
+  // On login route, render standalone auth container with fixed theme toggle
   if (pathname === "/login") {
-    return <main className="auth-shell">{children}</main>;
+    return (
+      <main className="auth-shell">
+        <div style={{ position: "fixed", top: "1.25rem", right: "1.25rem", zIndex: 50 }}>
+          <ThemeToggle />
+        </div>
+        {children}
+      </main>
+    );
   }
 
   if (loading) {
@@ -60,8 +68,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           alignItems: "center",
           justifyContent: "center",
           minHeight: "100vh",
-          background: "var(--bg-canvas, #090d16)",
-          color: "var(--text-muted, #94a3b8)",
+          background: "var(--bg-base)",
+          color: "var(--text-muted)",
           gap: "1rem",
         }}
       >
@@ -69,13 +77,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           style={{
             width: "36px",
             height: "36px",
-            border: "3px solid rgba(255,255,255,0.1)",
-            borderTopColor: "var(--accent, #3b82f6)",
+            border: "3px solid var(--border-light)",
+            borderTopColor: "var(--accent)",
             borderRadius: "50%",
             animation: "spin 0.8s linear infinite",
           }}
         />
-        <span style={{ fontSize: "0.85rem" }}>Verifying session...</span>
+        <span style={{ fontSize: "0.85rem", fontFamily: "var(--font-mono)" }}>Verifying session...</span>
       </div>
     );
   }
@@ -86,11 +94,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="app-main">
         <header className="app-topbar">
           <div className="topbar-breadcrumbs">
-            <span className="crumb-segment">Workspace</span>
+            <span className="crumb-segment">Enterprise</span>
             <span className="crumb-separator">/</span>
-            <span className="crumb-target">{user?.organization_name || "Workspace"}</span>
+            <span className="crumb-target">{user?.organization_name || "CodeSec Workspace"}</span>
             <span className="crumb-separator">/</span>
-            <span className="crumb-badge">Production Gate</span>
+            <span className="crumb-badge">Audit Gate</span>
           </div>
 
           <div className="topbar-actions">
@@ -98,13 +106,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <span className="live-indicator" />
               <span>Webhook Active</span>
             </div>
+            <ThemeToggle />
             <Link href="/pull-requests" className="btn btn-secondary btn-sm">
               Audits
             </Link>
             <button
               onClick={handleSignOut}
               className="btn btn-outline btn-sm"
-              title="Sign out of CodeSecAudit"
+              title="Sign out"
             >
               Sign Out
             </button>

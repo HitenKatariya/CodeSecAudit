@@ -72,7 +72,7 @@ export function FindingDetailContent({ finding, onStatusChange }: Props) {
               <span className="font-semibold">Vulnerable Code</span>
               <span className="font-mono">Line {finding.line_number}</span>
             </div>
-            <pre className="p-3 rounded-b border font-mono text-xs overflow-x-auto whitespace-pre leading-relaxed" style={{ backgroundColor: "var(--bg-base)", borderColor: "var(--border-subtle)", color: "#fca5a5" }}>
+            <pre className="p-3 rounded-b border font-mono text-xs overflow-x-auto whitespace-pre leading-relaxed" style={{ backgroundColor: "var(--bg-base)", borderColor: "var(--border-subtle)", color: "var(--crit-color)" }}>
               {finding.code_snippet || "// Code snippet unavailable"}
             </pre>
           </div>
@@ -82,7 +82,7 @@ export function FindingDetailContent({ finding, onStatusChange }: Props) {
               <span className="font-semibold">Remediated Fix (OWASP)</span>
               <span>Safe Implementation</span>
             </div>
-            <pre className="p-3 rounded-b border font-mono text-xs overflow-x-auto whitespace-pre leading-relaxed" style={{ backgroundColor: "var(--bg-base)", borderColor: "var(--border-subtle)", color: "#86efac" }}>
+            <pre className="p-3 rounded-b border font-mono text-xs overflow-x-auto whitespace-pre leading-relaxed" style={{ backgroundColor: "var(--bg-base)", borderColor: "var(--border-subtle)", color: "var(--pass-color)" }}>
               {finding.suggested_fix || "// Fix suggestion unavailable"}
             </pre>
           </div>
@@ -99,7 +99,7 @@ export function FindingDetailContent({ finding, onStatusChange }: Props) {
             </div>
           }
         >
-          <div className="p-3.5 rounded border text-xs font-mono leading-relaxed" style={{ backgroundColor: "var(--bg-base)", borderColor: "var(--border-subtle)", color: "#fef08a" }}>
+          <div className="p-3.5 rounded border text-xs font-mono leading-relaxed" style={{ backgroundColor: "var(--bg-base)", borderColor: "var(--border-subtle)", color: "var(--med-color)" }}>
             {finding.attack_scenario}
           </div>
         </Card>
