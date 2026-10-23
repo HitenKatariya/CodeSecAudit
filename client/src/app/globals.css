@@ -848,11 +848,97 @@ a {
   border-color: var(--accent);
 }
 
-/* Responsive */
+/* Mobile Navigation & Responsive Enhancements */
+.mobile-menu-btn {
+  display: none;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-light);
+  color: var(--text-main);
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.5rem;
+}
+
+.mobile-close-btn {
+  display: none;
+  background: transparent;
+  border: 1px solid var(--border-light);
+  color: var(--text-muted);
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-backdrop {
+  display: none;
+}
+
 @media (max-width: 860px) {
-  .app-shell { flex-direction: column; }
-  .app-sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border-subtle); }
-  .app-content { padding: 1.25rem; }
+  .mobile-menu-btn {
+    display: inline-flex;
+  }
+  .mobile-close-btn {
+    display: inline-flex;
+  }
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    z-index: 99;
+  }
+  .app-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 280px;
+    max-width: 85vw;
+    z-index: 100;
+    background-color: var(--bg-surface);
+    transform: translateX(-100%);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.6);
+  }
+  .app-sidebar.mobile-open {
+    transform: translateX(0);
+  }
+  .app-content {
+    padding: 1rem;
+    overflow-x: hidden;
+  }
+  .topbar-breadcrumbs {
+    font-size: 0.8rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 60%;
+  }
+  .topbar-actions {
+    gap: 0.5rem;
+  }
+}
+
+/* Ensure data tables, code snippets, diff blocks scroll horizontally without breaking container */
+.data-table-container,
+.table-wrapper,
+table {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+pre, code {
+  max-width: 100%;
+  word-break: break-word;
 }
 
 /* Landing Page Styles */

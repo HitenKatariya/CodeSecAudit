@@ -67,9 +67,11 @@ const NAV_GROUPS: { group: string; items: NavLinkItem[] }[] = [
 interface SidebarProps {
   user?: UserProfile | null;
   onSignOut?: () => void;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
-export function Sidebar({ user: propUser, onSignOut }: SidebarProps = {}) {
+export function Sidebar({ user: propUser, onSignOut, isOpen, onClose }: SidebarProps = {}) {
   const pathname = usePathname();
   const [internalUser, setInternalUser] = React.useState<UserProfile | null>(null);
 
@@ -84,13 +86,24 @@ export function Sidebar({ user: propUser, onSignOut }: SidebarProps = {}) {
   const roleDisplay = user?.organization_role ? (user.organization_role.toLowerCase() === "admin" ? "Account Owner" : user.organization_role) : "Developer";
 
   return (
-    <aside className="app-sidebar">
-      <div className="sidebar-header">
-        <span className="logo-badge">🛡️</span>
-        <div>
-          <div className="logo-text">CodeSecAudit AI</div>
-          <div style={{ fontSize: "0.75rem", color: "var(--text-dim)", fontFamily: "var(--font-mono)" }}>PR Security Gate</div>
+    <aside className={`app-sidebar ${isOpen ? "mobile-open" : ""}`}>
+      <div className="sidebar-header" style={{ justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          <span className="logo-badge">🛡️</span>
+          <div>
+            <div className="logo-text">CodeSecAudit AI</div>
+            <div style={{ fontSize: "0.75rem", color: "var(--text-dim)", fontFamily: "var(--font-mono)" }}>PR Security Gate</div>
+          </div>
         </div>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="mobile-close-btn"
+            aria-label="Close sidebar"
+          >
+            ✕
+          </button>
+        )}
       </div>
 
       <nav className="sidebar-nav">
@@ -103,6 +116,7 @@ export function Sidebar({ user: propUser, onSignOut }: SidebarProps = {}) {
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={onClose}
                   className={`nav-item ${isActive ? "active" : ""}`}
                 >
                   {item.icon}

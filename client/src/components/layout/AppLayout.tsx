@@ -91,23 +91,50 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
   return (
     <div className="app-shell">
-      <Sidebar user={user} onSignOut={handleSignOut} />
+      {mobileOpen && (
+        <div
+          className="sidebar-backdrop"
+          onClick={() => setMobileOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+      <Sidebar
+        user={user}
+        onSignOut={handleSignOut}
+        isOpen={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+      />
       <div className="app-main">
         <header className="app-topbar">
           <div className="topbar-breadcrumbs">
-            <span className="crumb-segment">Enterprise</span>
+            <button
+              className="mobile-menu-btn"
+              onClick={() => setMobileOpen(!mobileOpen)}
+              aria-label="Toggle navigation"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </button>
+            <span className="crumb-segment">CodeSec</span>
             <span className="crumb-separator">/</span>
-            <span className="crumb-target">{user?.organization_name || "CodeSec Workspace"}</span>
-            <span className="crumb-separator">/</span>
-            <span className="crumb-badge">Audit Gate</span>
+            <span className="crumb-target">{user?.organization_name || user?.username || "Audit Gate"}</span>
           </div>
 
           <div className="topbar-actions">
             <div className="live-pill">
               <span className="live-indicator" />
-              <span>Webhook Active</span>
+              <span>Active</span>
             </div>
             <ThemeToggle />
             <Link href="/pull-requests" className="btn btn-secondary btn-sm">
