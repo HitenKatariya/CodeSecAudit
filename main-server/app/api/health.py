@@ -56,3 +56,47 @@ def version():
         version=settings.app_version,
         git_sha=settings.git_sha,
     )
+
+
+@router.get("/health/worker-status")
+async def health_worker_status():
+    from sqlalchemy import select
+    from app.db.models.review import ReviewJob
+    from app.db.session import get_session_factory
+
+    settings = get_settings()
+    jwt_status = "ok"
+    try:
+        from app.security.github_app import _build_app_jwt
+
+        _ = _build_app_jwt()
+    except Exception as e:
+        jwt_status = f"error: {type(e).__name__}: {str(e)}"
+
+    job_list = []
+    try:
+        factory = get_session_factory()
+        async with factory() as db:
+            stmt = select(ReviewJob).order_by(ReviewJob.created_at.desc()).limit(5)
+            jobs = (await db.execute(stmt)).scalars().all()
+            job_list = [
+                {
+                    "id": j.id,
+                    "pr_number": j.pr_number,
+                    "status": j.status,
+                    "error_message": j.error_message,
+                    "created_at": j.created_at.isoformat() if j.created_at else None,
+                }
+                for j in jobs
+            ]
+    except Exception as e:
+        job_list = [{"error": str(e)}]
+
+    return {
+        "app_id": str(settings.github_app_id or "").strip(),
+        "has_private_key": bool(settings.github_app_private_key),
+        "private_key_len": len(settings.github_app_private_key or ""),
+        "jwt_status": jwt_status,
+        "run_worker_inline": settings.run_worker_inline,
+        "recent_jobs": job_list,
+    }

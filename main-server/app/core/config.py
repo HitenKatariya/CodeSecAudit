@@ -41,7 +41,7 @@ class Settings(BaseSettings):
 
     # Free Render plans have no background workers; run the queue consumer
     # inside the web process instead. Disable when deploying a real worker.
-    run_worker_inline: bool = Field(default=False, alias="RUN_WORKER_INLINE")
+    run_worker_inline: bool = Field(default=True, alias="RUN_WORKER_INLINE")
 
     log_redaction_enabled: bool = Field(default=True, alias="LOG_REDACTION_ENABLED")
     review_max_files: int = Field(default=30, alias="REVIEW_MAX_FILES")

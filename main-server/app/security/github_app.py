@@ -13,11 +13,22 @@ GITHUB_API_BASE = "https://api.github.com"
 _TOKEN_CACHE_KEY = "github_app:install_token:{installation_id}"
 
 
+def _format_private_key(raw_key: str) -> str:
+    if not raw_key:
+        return ""
+    key = raw_key.strip().strip("\"'").strip()
+    if "\\n" in key:
+        key = key.replace("\\n", "\n")
+    return key
+
+
 def _build_app_jwt() -> str:
     settings = get_settings()
     now = int(time.time())
-    payload = {"iat": now - 60, "exp": now + 540, "iss": settings.github_app_id}
-    return jwt.encode(payload, settings.github_app_private_key, algorithm="RS256")
+    app_id = str(settings.github_app_id or "").strip().strip("\"'")
+    payload = {"iat": now - 60, "exp": now + 540, "iss": app_id}
+    private_key = _format_private_key(settings.github_app_private_key)
+    return jwt.encode(payload, private_key, algorithm="RS256")
 
 
 async def get_installation_token(installation_id: str) -> str:
