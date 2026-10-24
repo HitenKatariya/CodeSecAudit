@@ -17,10 +17,13 @@ from app.security.signatures import verify_github_signature
 
 logger = logging.getLogger("main_server")
 router = APIRouter(prefix="/webhooks", tags=["Webhooks"])
+singular_router = APIRouter(prefix="/webhook", tags=["Webhooks"])
 
 
 @router.post("", status_code=status.HTTP_202_ACCEPTED)
 @router.post("/github", status_code=status.HTTP_202_ACCEPTED)
+@singular_router.post("", status_code=status.HTTP_202_ACCEPTED)
+@singular_router.post("/github", status_code=status.HTTP_202_ACCEPTED)
 async def github_webhook(
     request: Request,
     body: bytes = Depends(verify_github_signature),

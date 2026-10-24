@@ -13,7 +13,7 @@ from app.api.policies import router as policies_router
 from app.api.repositories import router as repositories_router
 from app.api.reviews import router as reviews_router
 from app.api.team import router as team_router
-from app.api.webhooks import router as webhooks_router
+from app.api.webhooks import router as webhooks_router, singular_router as webhooks_singular_router
 from app.core.config import get_settings
 from app.core.logging import setup_logger
 
@@ -99,6 +99,9 @@ app.include_router(team_router)
 app.include_router(webhooks_router, prefix="/v1")
 app.include_router(webhooks_router, include_in_schema=False)
 app.include_router(webhooks_router, prefix="/api", include_in_schema=False)
+app.include_router(webhooks_singular_router, prefix="/v1", include_in_schema=False)
+app.include_router(webhooks_singular_router, include_in_schema=False)
+app.include_router(webhooks_singular_router, prefix="/api", include_in_schema=False)
 app.include_router(reviews_router)
 app.include_router(analytics_router)
 app.include_router(logs_router)
