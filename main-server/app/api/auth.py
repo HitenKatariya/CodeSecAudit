@@ -68,8 +68,11 @@ async def github_auth_callback(
         try:
             user_data, email = await verify_oauth_callback(code, state)
         except Exception as e:
-            logger.warning(f"Standard OAuth verification failed: {e}")
-            raise HTTPException(status_code=400, detail=f"OAuth verification failed: {e}")
+            logger.warning(f"Standard OAuth verification failed, trying direct exchange fallback: {e}")
+            try:
+                user_data, email = await exchange_github_app_code(code)
+            except Exception as e2:
+                logger.warning(f"Direct code exchange fallback failed: {e2}")
     elif code:
         # GitHub App installation callback with authorization code
         try:

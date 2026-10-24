@@ -40,6 +40,16 @@ export default function LoginPage() {
 
   useEffect(() => {
     let isMounted = true;
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const urlErr = params.get("error");
+      if (urlErr === "oauth_state_expired") {
+        setError("GitHub authorization session timed out. Please try signing in again.");
+      } else if (urlErr === "oauth_failed") {
+        setError("GitHub authentication could not be completed. You can try again or use direct login below.");
+      }
+    }
+
     fetchMe()
       .then((user) => {
         if (!isMounted) return;
