@@ -53,11 +53,13 @@ services:
           property: hostport
       - key: RAG_SERVICE_TOKEN
         sync: false
-      # Public URL of codesec-client on Render
+      # Public URL of codesec-client on Render (configure with your specific deployed URL)
       - key: NEXT_PUBLIC_APP_URL
-        value: https://codesec-client.onrender.com
+        sync: false
       - key: OAUTH_REDIRECT_URI
-        value: https://codesec-client.onrender.com/api/auth/github/callback
+        sync: false
+      - key: GITHUB_APP_SLUG
+        sync: false
       - key: RUN_WORKER_INLINE
         value: "true"
       - key: GITHUB_CLIENT_ID
@@ -148,7 +150,11 @@ services:
     autoDeploy: true
     envVars:
       - key: MAIN_SERVER_URL
-        value: https://codesec-main.onrender.com
+        sync: false
+      - key: NEXT_PUBLIC_APP_URL
+        sync: false
+      - key: NEXT_PUBLIC_GITHUB_APP_NAME
+        sync: false
 
   # Render Key Value instances live in `services`, not `databases`.
   # ipAllowList: [] keeps it private (internal connections only).

@@ -327,6 +327,8 @@ async def login(
         organization_name=org_title,
         organization_role=org_role,
         is_installed=has_install,
+        github_app_slug=settings.effective_github_app_slug,
+        github_app_install_url=settings.github_app_install_url,
     )
 
 
@@ -384,6 +386,7 @@ async def get_me(
     tenant: TenantContext = Depends(get_tenant_context),
     db: AsyncSession = Depends(get_db),
 ):
+    settings = get_settings()
     inst_stmt = select(GitHubInstallation).where(GitHubInstallation.organization_id == tenant.organization.id)
     has_install = (await db.execute(inst_stmt)).first() is not None
 
@@ -398,6 +401,8 @@ async def get_me(
         organization_name=tenant.organization.name,
         organization_role=tenant.role,
         is_installed=has_install,
+        github_app_slug=settings.effective_github_app_slug,
+        github_app_install_url=settings.github_app_install_url,
     )
 
 

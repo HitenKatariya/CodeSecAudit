@@ -22,6 +22,7 @@ import {
   fetchRepositories,
   fetchPullRequests,
   GITHUB_APP_INSTALL_URL,
+  getGitHubAppInstallUrl,
 } from "@/lib/api";
 import { PullRequest, Repository, UserProfile } from "@/types";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -249,7 +250,7 @@ export default function HomePage() {
                 >
                   ↻ Refresh Repos
                 </Button>
-                <a href={GITHUB_APP_INSTALL_URL} target="_blank" rel="noopener noreferrer">
+                <a href={getGitHubAppInstallUrl(user)} target="_blank" rel="noopener noreferrer">
                   <Button variant="primary" size="md" icon={<GitHubIcon size={16} />}>
                     Install GitHub App (1-Click) ↗
                   </Button>
@@ -318,7 +319,7 @@ export default function HomePage() {
           actions={
             <div className="flex items-center gap-2">
               {!isInstalled && repos.length === 0 && (
-                <a href={GITHUB_APP_INSTALL_URL} target="_blank" rel="noopener noreferrer">
+                <a href={getGitHubAppInstallUrl(user)} target="_blank" rel="noopener noreferrer">
                   <Button variant="secondary" size="md" icon={<GitHubIcon size={16} />}>
                     Install App ↗
                   </Button>
@@ -503,7 +504,7 @@ export default function HomePage() {
           </a>
 
           {!isInstalled && (
-            <a href={GITHUB_APP_INSTALL_URL} target="_blank" rel="noopener noreferrer">
+            <a href={getGitHubAppInstallUrl(user as UserProfile | null)} target="_blank" rel="noopener noreferrer">
               <Button variant="secondary" size="lg" icon={<RepoIcon size={18} />}>
                 Install GitHub App (1-Click) ↗
               </Button>
@@ -729,10 +730,10 @@ export default function HomePage() {
             <span className="badge badge-low mb-2">STEP 1</span>
             <h3 className="text-base font-bold text-main mb-1">1-Click Install GitHub App</h3>
             <p className="text-xs text-muted leading-relaxed mb-3">
-              Add the <strong className="text-main">codesecaudit-ai</strong> GitHub App to your personal account or organization. Select which repositories you want audited.
+              Add the <strong className="text-main">{(user as UserProfile | null)?.github_app_slug || "CodeSecAudit"}</strong> GitHub App to your personal account or organization. Select which repositories you want audited.
             </p>
             {!isInstalled && (
-              <a href={GITHUB_APP_INSTALL_URL} target="_blank" rel="noopener noreferrer">
+              <a href={getGitHubAppInstallUrl(user as UserProfile | null)} target="_blank" rel="noopener noreferrer">
                 <Button variant="secondary" size="sm" icon={<GitHubIcon size={14} />}>
                   Install App on GitHub ↗
                 </Button>

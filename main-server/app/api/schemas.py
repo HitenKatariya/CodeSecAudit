@@ -28,6 +28,8 @@ class UserMeResponse(BaseModel):
     organization_name: str
     organization_role: str
     is_installed: bool = False
+    github_app_slug: Optional[str] = None
+    github_app_install_url: Optional[str] = None
 
 
 

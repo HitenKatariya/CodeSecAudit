@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { fetchMe, fetchRepositories, fetchPullRequests, GITHUB_APP_INSTALL_URL } from "@/lib/api";
+import { fetchMe, fetchRepositories, fetchPullRequests, getGitHubAppInstallUrl } from "@/lib/api";
 
 export default function IntegrationsPage() {
   const [testingWebhook, setTestingWebhook] = useState(false);
@@ -92,7 +92,7 @@ export default function IntegrationsPage() {
             <Button variant="secondary" size="sm" loading={testingWebhook} onClick={handleTestWebhook}>
               Test Webhook
             </Button>
-            <a href={GITHUB_APP_INSTALL_URL} target="_blank" rel="noreferrer">
+            <a href={getGitHubAppInstallUrl()} target="_blank" rel="noreferrer">
               <Button variant="primary" size="sm">Install / Configure on GitHub ↗</Button>
             </a>
           </div>

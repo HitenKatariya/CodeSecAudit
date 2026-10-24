@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     github_app_id: str = Field(default="", alias="GITHUB_APP_ID")
     github_app_private_key: str = Field(default="", alias="GITHUB_APP_PRIVATE_KEY")
     github_webhook_secret: str = Field(default="", alias="GITHUB_WEBHOOK_SECRET")
+    github_app_slug: str = Field(default="codesecurityaudit-app", alias="GITHUB_APP_SLUG")
+    github_app_name: str = Field(default="", alias="GITHUB_APP_NAME")
 
     rag_service_url: str = Field(default="http://rag-server:8010", alias="RAG_SERVICE_URL")
     rag_service_token: str = Field(default="dev_rag_service_token_secret", alias="RAG_SERVICE_TOKEN")
@@ -78,15 +80,23 @@ class Settings(BaseSettings):
                 return "postgresql+asyncpg://" + value[len("postgresql://") :]
         return value
 
+    @property
+    def effective_github_app_slug(self) -> str:
+        return (self.github_app_name or self.github_app_slug or "codesecurityaudit-app").strip()
+
+    @property
+    def github_app_install_url(self) -> str:
+        return f"https://github.com/apps/{self.effective_github_app_slug}/installations/new"
+
     @field_validator("rag_service_url", "main_server_url", mode="before")
     @classmethod
     def _ensure_internal_scheme(cls, value: str) -> str:
         """Render's fromService hostport property has no scheme; add one."""
         if isinstance(value, str) and value:
             clean = value.strip().lower()
-            if clean.startswith("codesec-main") or clean == "codesec-main:10000":
+            if clean in {"codesec-main", "codesec-main:10000", "http://codesec-main", "http://codesec-main:10000"}:
                 return "https://codesec-main.onrender.com"
-            if clean.startswith("codesec-rag") or clean == "codesec-rag:10000":
+            if clean in {"codesec-rag", "codesec-rag:10000", "http://codesec-rag", "http://codesec-rag:10000"}:
                 return "https://codesec-rag.onrender.com"
             if not value.startswith(("http://", "https://")):
                 return f"http://{value}"
@@ -99,7 +109,7 @@ class Settings(BaseSettings):
         if not isinstance(value, str) or not value:
             return value
         clean = value.strip().lower()
-        if clean.startswith("codesec-client") or clean == "codesec-client:10000":
+        if clean in {"codesec-client", "codesec-client:10000", "http://codesec-client", "http://codesec-client:10000"}:
             return "https://codesec-client.onrender.com"
         if value.startswith(("http://", "https://")):
             return value

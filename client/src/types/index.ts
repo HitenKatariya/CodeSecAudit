@@ -13,6 +13,8 @@ export interface UserProfile {
   organization_name: string;
   organization_role: string;
   is_installed?: boolean;
+  github_app_slug?: string;
+  github_app_install_url?: string;
 }
 
 

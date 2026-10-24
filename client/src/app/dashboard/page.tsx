@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { PullRequest, Repository } from "@/types";
-import { fetchMe, fetchPullRequests, fetchRepositories, GITHUB_APP_INSTALL_URL } from "@/lib/api";
+import { PullRequest, Repository, UserProfile } from "@/types";
+import { fetchMe, fetchPullRequests, fetchRepositories, GITHUB_APP_INSTALL_URL, getGitHubAppInstallUrl } from "@/lib/api";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { Button } from "@/components/ui/Button";
@@ -17,6 +17,7 @@ export default function DashboardPage() {
   const [prs, setPrs] = useState<PullRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [user, setUser] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -33,6 +34,7 @@ export default function DashboardPage() {
       .then(([r, p, me]) => {
         setRepos(r);
         setPrs(p);
+        setUser(me);
         if (me?.is_installed || r.length > 0) {
           setIsInstalled(true);
           if (typeof window !== "undefined") {
@@ -69,7 +71,7 @@ export default function DashboardPage() {
         actions={
           <div className="flex items-center gap-2">
             {!isInstalled && repos.length === 0 && (
-              <a href={GITHUB_APP_INSTALL_URL} target="_blank" rel="noopener noreferrer">
+              <a href={getGitHubAppInstallUrl(user)} target="_blank" rel="noopener noreferrer">
                 <Button variant="secondary" size="md" icon={<GitHubIcon size={16} />}>
                   Install GitHub App ↗
                 </Button>
@@ -132,7 +134,7 @@ export default function DashboardPage() {
           </div>
 
           <a
-            href={GITHUB_APP_INSTALL_URL}
+            href={getGitHubAppInstallUrl(user)}
             target="_blank"
             rel="noopener noreferrer"
             style={{ textDecoration: "none" }}

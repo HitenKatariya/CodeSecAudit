@@ -12,8 +12,19 @@ import {
 } from "@/types";
 
 export const GITHUB_APP_NAME =
-  process.env.NEXT_PUBLIC_GITHUB_APP_NAME || "codesecaudit-ai";
-export const GITHUB_APP_INSTALL_URL = `https://github.com/apps/${GITHUB_APP_NAME}/installations/new`;
+  process.env.NEXT_PUBLIC_GITHUB_APP_NAME || "codesecurityaudit-app";
+export const GITHUB_APP_INSTALL_URL =
+  process.env.NEXT_PUBLIC_GITHUB_APP_URL ||
+  `https://github.com/apps/${GITHUB_APP_NAME}/installations/new`;
+
+export function getGitHubAppInstallUrl(user?: UserProfile | null): string {
+  if (user?.github_app_install_url) return user.github_app_install_url;
+  if (typeof window !== "undefined") {
+    const cached = localStorage.getItem("codesec_install_url");
+    if (cached) return cached;
+  }
+  return GITHUB_APP_INSTALL_URL;
+}
 
 export async function fetchMe(): Promise<UserProfile | null> {
   try {
@@ -21,6 +32,9 @@ export async function fetchMe(): Promise<UserProfile | null> {
     if (res.ok) {
       const data = await res.json();
       if (data && data.id) {
+        if (typeof window !== "undefined" && data.github_app_install_url) {
+          localStorage.setItem("codesec_install_url", data.github_app_install_url);
+        }
         return data;
       }
     }

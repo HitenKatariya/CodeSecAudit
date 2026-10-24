@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import { Repository } from "@/types";
-import { fetchRepositories, GITHUB_APP_INSTALL_URL } from "@/lib/api";
+import { fetchRepositories, getGitHubAppInstallUrl } from "@/lib/api";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { Button } from "@/components/ui/Button";
@@ -64,7 +64,7 @@ export default function RepositoriesPage() {
         title="Repositories"
         subtitle="Monitored source repositories with automated PR security gates."
         actions={
-          <a href={GITHUB_APP_INSTALL_URL} target="_blank" rel="noopener noreferrer">
+          <a href={getGitHubAppInstallUrl()} target="_blank" rel="noopener noreferrer">
             <Button
               variant="primary"
               size="md"
