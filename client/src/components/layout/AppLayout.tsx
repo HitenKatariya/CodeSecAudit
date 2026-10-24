@@ -13,6 +13,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     let isMounted = true;
@@ -23,6 +28,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         setLoading(false);
         if (!profile && pathname !== "/login" && pathname !== "/") {
           router.replace("/login");
+        } else if (profile && pathname === "/") {
+          router.replace("/dashboard");
         }
       })
       .catch(() => {
@@ -90,12 +97,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
-
-  const [mobileOpen, setMobileOpen] = useState(false);
-
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
 
   return (
     <div className="app-shell">

@@ -43,18 +43,21 @@ export default function DashboardPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const totalFindings = repos.reduce((acc, r) => acc + (r.open_findings_count || 0), 0);
-  const criticalCount = repos.reduce((acc, r) => acc + (r.critical_count || 0), 0);
-  const blockedPrsCount = prs.filter((p) => p.gate_status === "BLOCKED").length;
+  const safeRepos = Array.isArray(repos) ? repos : [];
+  const safePrs = Array.isArray(prs) ? prs : [];
+
+  const totalFindings = safeRepos.reduce((acc, r) => acc + (r?.open_findings_count || 0), 0);
+  const criticalCount = safeRepos.reduce((acc, r) => acc + (r?.critical_count || 0), 0);
+  const blockedPrsCount = safePrs.filter((p) => p?.gate_status === "BLOCKED").length;
 
   const avgSecurityScore =
-    repos.length > 0
-      ? Math.round(repos.reduce((acc, r) => acc + (r.security_score || 0), 0) / repos.length)
+    safeRepos.length > 0
+      ? Math.round(safeRepos.reduce((acc, r) => acc + (r?.security_score || 0), 0) / safeRepos.length)
       : 100;
 
   const primaryBlockedRepo =
-    repos.find((r) => r.critical_count > 0)?.name ||
-    repos[0]?.name ||
+    safeRepos.find((r) => r?.critical_count > 0)?.name ||
+    safeRepos[0]?.name ||
     "Monitored Repositories";
 
   return (
