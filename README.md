@@ -22,7 +22,7 @@ CodeSecAudit AI acts like an AI senior engineer inside GitHub pull requests, det
 | Hugging Face Dataset | https://huggingface.co/datasets/hitenvk22/CodeSecAudit-RAG-Shuffled |
 | RAG Service (live) | https://codesec-rag-xp4b.onrender.com |
 | Live PR Evaluation (CVSS 7.5/10.0) | https://github.com/HitenKatariya/CodeSecAudit/pull/14 |
-| GitHub App | https://github.com/apps/codesecaudit-ai |
+| GitHub App | https://github.com/apps/codesecurityaudit-app |
 | App (Client) | https://codesec-client-v6a6.onrender.com |
 | API (main-server) | https://codesec-main-e3dq.onrender.com |
 
