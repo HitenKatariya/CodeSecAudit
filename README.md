@@ -18,22 +18,20 @@ CodeSecAudit AI acts like an AI senior engineer inside GitHub pull requests, det
 
 | Asset | Link |
 |---|---|
-| Kaggle Notebook | https://www.kaggle.com/code/omchoksi04/codereview |
-| Hugging Face Dataset | https://huggingface.co/datasets/HitenKatariya/CodeSecAudit-RAG |
-| RAG Service (live) | https://HitenKatariya-codereview-agent.hf.space |
-| GitHub Repo | https://github.com/HitenKatariya/CodeSecurityAuditAgent |
-| Live PR Evaluation (CVSS 9.89) | https://github.com/HitenKatariya/CodeSecurityAuditAgent/pull/9 |
+| Kaggle Notebook | https://www.kaggle.com/code/hitenkatariya/codesecaudit-rag |
+| Hugging Face Dataset | https://huggingface.co/datasets/hitenvk22/CodeSecAudit-RAG-Shuffled |
+| RAG Service (live) | https://codesec-rag-xp4b.onrender.com |
+| Live PR Evaluation (CVSS 7.5/10.0) | https://github.com/HitenKatariya/CodeSecAudit/pull/14 |
 | GitHub App | https://github.com/apps/codesecaudit-ai |
-| App (Client) | https://codesec-client.onrender.com |
-| API (main-server) | https://codesec-main.onrender.com |
-| RAG Service | https://codesec-rag.onrender.com |
+| App (Client) | https://codesec-client-v6a6.onrender.com |
+| API (main-server) | https://codesec-main-e3dq.onrender.com |
 
 ---
 
 ## Screenshots
 
 ### PR Review — Inline Comments 
-Link : https://github.com/HitenKatariya/CodeSecurityAuditAgent/pull/4
+Link : https://github.com/HitenKatariya/CodeSecurityAuditAgent/pull/14
 ![PR Review Bugs](docs/screenshots/github_pr_review_bugs.png)
 *Detected vulnerabilities with inline PR comments*
 
@@ -42,7 +40,7 @@ Link : https://github.com/HitenKatariya/CodeSecurityAuditAgent/pull/4
 
 ### Dataset
 
-[![HF Dataset](docs/screenshots/hf-dataset.png)](https://huggingface.co/datasets/HitenKatariya/CodeSecAudit-RAG)
+[![HF Dataset](docs/screenshots/hf-dataset.png)](https://huggingface.co/datasets/hitenvk22/CodeSecAudit-RAG-Shuffled)
 *CodeSecAudit-RAG dataset on Hugging Face — click to explore*
 
 ### API & Services
