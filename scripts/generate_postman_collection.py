@@ -754,7 +754,7 @@ pm.test("Status code is 200", function () {
             base_var="rag_url",
             headers={"X-Internal-RAG-Token": "{{rag_service_token}}"},
             body_json={
-                "corpus_url": "https://huggingface.co/datasets/OMCHOKSI108/CodeSecAudit-RAG/resolve/main/rag/rag_corpus.jsonl.gz",
+                "corpus_url": "https://huggingface.co/datasets/HitenKatariya/CodeSecAudit-RAG/resolve/main/rag/rag_corpus.jsonl.gz",
                 "max_documents": 5
             },
             description="Indexes a batch of OWASP corpus chunks into Qdrant.",

@@ -17,7 +17,7 @@ Transactional emails are sent via [Resend](https://resend.com).
 - Brief feature overview (7 CWE detectors, inline comments, risk scoring).
 - Link to dashboard showing first review results.
 - Note on free tier limits (30 PR reviews/month).
-- Owner contact: `omchoksi108@gmail.com`.
+- Owner contact: `hitenvk22@gmail.com`.
 
 ---
 
@@ -51,7 +51,7 @@ Transactional emails are sent via [Resend](https://resend.com).
 - Current usage: `reviews_used / reviews_limit`.
 - Reset date: `window_start + 30 days`.
 - CTA: "Need more reviews?" — mailto link to owner.
-- Owner contact: `mailto:omchoksi108@gmail.com?subject=CodeSecAudit%20-%20Upgrade%20Request`.
+- Owner contact: `mailto:hitenvk22@gmail.com?subject=CodeSecAudit%20-%20Upgrade%20Request`.
 
 ---
 
@@ -60,7 +60,7 @@ Transactional emails are sent via [Resend](https://resend.com).
 **Trigger**: User clicks the contact link in the limit-reached email or on the
 dashboard.
 
-**Mechanism**: Simple `mailto:omchoksi108@gmail.com` link with pre-filled
+**Mechanism**: Simple `mailto:hitenvk22@gmail.com` link with pre-filled
 subject line. No in-app purchase flow yet.
 
 **Subject** (pre-filled): `CodeSecAudit - Upgrade Request`
@@ -78,7 +78,7 @@ subject line. No in-app purchase flow yet.
 |------------------------|----------------------------------------------|
 | `RESEND_API_KEY`       | `re_xxxxxxxxxxxx`                            |
 | `EMAIL_FROM`           | `CodeSecAudit <noreply@codesecaudit.ai>`     |
-| `OWNER_CONTACT_EMAIL`  | `omchoksi108@gmail.com`                      |
+| `OWNER_CONTACT_EMAIL`  | `hitenvk22@gmail.com`                      |
 
 ---
 

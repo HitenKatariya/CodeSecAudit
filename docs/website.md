@@ -42,7 +42,7 @@ Open http://localhost:5000
 | `MONGODB_DB_NAME` | No | `codereview` | MongoDB database name |
 | `RESEND_API_KEY` | No | (empty) | Resend.com API key for email |
 | `EMAIL_FROM` | No | `CodeSecAudit AI <onboarding@resend.dev>` | Sender email address |
-| `OWNER_CONTACT_EMAIL` | No | `omchoksi108@gmail.com` | Owner support email |
+| `OWNER_CONTACT_EMAIL` | No | `hitenvk22@gmail.com` | Owner support email |
 | `FREE_PR_REVIEWS_PER_MONTH` | No | `30` | Monthly free PR review limit |
 
 ### Fallbacks
@@ -167,7 +167,7 @@ Set these env vars in Render dashboard (or via API):
 - `MONGODB_DB_NAME` — `codereview`
 - `RESEND_API_KEY` — From Resend.com
 - `EMAIL_FROM` — Sender address
-- `OWNER_CONTACT_EMAIL` — `omchoksi108@gmail.com`
+- `OWNER_CONTACT_EMAIL` — `hitenvk22@gmail.com`
 - `FREE_PR_REVIEWS_PER_MONTH` — `30`
 
 ### Manual deploy

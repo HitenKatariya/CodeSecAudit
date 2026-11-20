@@ -57,6 +57,6 @@ The Streamlit dashboard shows:
 
 ## Owner Contact
 
-Users who hit the limit see a block message with a `mailto:omchoksi108@gmail.com`
+Users who hit the limit see a block message with a `mailto:hitenvk22@gmail.com`
 link. The owner can manually increase the user's `extra_reviews` or upgrade them
 to a custom tier.

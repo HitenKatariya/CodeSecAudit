@@ -131,7 +131,7 @@ async def retry_review_job(job_id: str):
             "pr_number": job.pr_number,
             "commit_sha": job.commit_sha,
             "is_diff": True,
-            "repo_full_name": repo.full_name if repo else "OMCHOKSI108/CodeSecurityAuditAgent",
+            "repo_full_name": repo.full_name if repo else "HitenKatariya/CodeSecurityAuditAgent",
             "installation_id": inst.installation_id if inst else "174581234",
         }
         await enqueue_review_job(payload)

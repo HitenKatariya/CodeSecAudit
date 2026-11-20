@@ -1627,7 +1627,7 @@
             "description": "Indexes a batch of OWASP corpus chunks into Qdrant.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"corpus_url\": \"https://huggingface.co/datasets/OMCHOKSI108/CodeSecAudit-RAG/resolve/main/rag/rag_corpus.jsonl.gz\",\n  \"max_documents\": 5\n}",
+              "raw": "{\n  \"corpus_url\": \"https://huggingface.co/datasets/HitenKatariya/CodeSecAudit-RAG/resolve/main/rag/rag_corpus.jsonl.gz\",\n  \"max_documents\": 5\n}",
               "options": {
                 "raw": {
                   "language": "json"

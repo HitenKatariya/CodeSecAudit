@@ -107,7 +107,7 @@ def search(req: SearchRequest):
 @router.post("/v1/index", status_code=202, dependencies=[Depends(verify_internal_token)])
 def trigger_index(req: IndexRequest):
     settings = get_settings()
-    url = req.corpus_url or "https://huggingface.co/datasets/OMCHOKSI108/CodeSecAudit-RAG/resolve/main/rag/rag_corpus.jsonl.gz"
+    url = req.corpus_url or "https://huggingface.co/datasets/HitenKatariya/CodeSecAudit-RAG/resolve/main/rag/rag_corpus.jsonl.gz"
     try:
         chunks = load_corpus_from_url(url)
         if req.max_documents and req.max_documents > 0:

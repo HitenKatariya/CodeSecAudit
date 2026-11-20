@@ -75,7 +75,7 @@ export default function PRDetailPage() {
             pr.pr_url ||
             (pr.repository.includes("/")
               ? `https://github.com/${pr.repository}/pull/${pr.pr_number}`
-              : `https://github.com/OMCHOKSI108/CodeSecurityAuditAgent/pull/${pr.pr_number}`)
+              : `https://github.com/HitenKatariya/CodeSecurityAuditAgent/pull/${pr.pr_number}`)
           }
           target="_blank"
           rel="noreferrer"

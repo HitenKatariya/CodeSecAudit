@@ -127,7 +127,7 @@ export async function fetchPullRequests(): Promise<PullRequest[]> {
       const high = rFindings.filter((f) => f.severity === "high").length;
       const med = rFindings.filter((f) => f.severity === "medium").length;
       const low = rFindings.filter((f) => f.severity === "low").length;
-      const repoFullName = r.repo_full_name || r.repository_id || "OMCHOKSI108/CodeSecurityAuditAgent";
+      const repoFullName = r.repo_full_name || r.repository_id || "HitenKatariya/CodeSecurityAuditAgent";
       const prUrl = r.pr_url || (repoFullName.includes("/") ? `https://github.com/${repoFullName}/pull/${r.pr_number}` : undefined);
       return {
         id: r.id,
@@ -158,7 +158,7 @@ export async function fetchPullRequestById(id: string): Promise<PullRequest | nu
     const high = review.findings.filter((f) => f.severity === "high").length;
     const med = review.findings.filter((f) => f.severity === "medium").length;
     const low = review.findings.filter((f) => f.severity === "low").length;
-    const repoFullName = review.repo_full_name || review.repository_id || "OMCHOKSI108/CodeSecurityAuditAgent";
+    const repoFullName = review.repo_full_name || review.repository_id || "HitenKatariya/CodeSecurityAuditAgent";
     const prUrl = review.pr_url || (repoFullName.includes("/") ? `https://github.com/${repoFullName}/pull/${review.pr_number}` : undefined);
     return {
       id: review.id,

@@ -7,8 +7,8 @@ CodeSecAudit AI acts like an AI senior engineer inside GitHub pull requests, det
 [![Python](https://img.shields.io/badge/Python-3.11+-blue)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688)](https://fastapi.tiangolo.com/)
 [![Docker](https://img.shields.io/badge/Docker-compose-2496ED)](https://docs.docker.com/compose/)
-[![Hugging Face Dataset](https://img.shields.io/badge/HF-Dataset-FFD21E)](https://huggingface.co/datasets/OMCHOKSI108/CodeSecAudit-RAG)
-[![Hugging Face Space](https://img.shields.io/badge/HF-RAG%20Service-FFD21E)](https://OMCHOKSI108-codereview-agent.hf.space)
+[![Hugging Face Dataset](https://img.shields.io/badge/HF-Dataset-FFD21E)](https://huggingface.co/datasets/HitenKatariya/CodeSecAudit-RAG)
+[![Hugging Face Space](https://img.shields.io/badge/HF-RAG%20Service-FFD21E)](https://HitenKatariya-codereview-agent.hf.space)
 [![Kaggle](https://img.shields.io/badge/Kaggle-Notebook-20BEFF)](https://www.kaggle.com/code/omchoksi04/codereview)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -19,10 +19,10 @@ CodeSecAudit AI acts like an AI senior engineer inside GitHub pull requests, det
 | Asset | Link |
 |---|---|
 | Kaggle Notebook | https://www.kaggle.com/code/omchoksi04/codereview |
-| Hugging Face Dataset | https://huggingface.co/datasets/OMCHOKSI108/CodeSecAudit-RAG |
-| RAG Service (live) | https://OMCHOKSI108-codereview-agent.hf.space |
-| GitHub Repo | https://github.com/OMCHOKSI108/CodeSecurityAuditAgent |
-| Live PR Evaluation (CVSS 9.89) | https://github.com/OMCHOKSI108/CodeSecurityAuditAgent/pull/9 |
+| Hugging Face Dataset | https://huggingface.co/datasets/HitenKatariya/CodeSecAudit-RAG |
+| RAG Service (live) | https://HitenKatariya-codereview-agent.hf.space |
+| GitHub Repo | https://github.com/HitenKatariya/CodeSecurityAuditAgent |
+| Live PR Evaluation (CVSS 9.89) | https://github.com/HitenKatariya/CodeSecurityAuditAgent/pull/9 |
 | GitHub App | https://github.com/apps/codesecaudit-ai |
 | App (Client) | https://codesec-client.onrender.com |
 | API (main-server) | https://codesec-main.onrender.com |
@@ -33,7 +33,7 @@ CodeSecAudit AI acts like an AI senior engineer inside GitHub pull requests, det
 ## Screenshots
 
 ### PR Review — Inline Comments 
-Link : https://github.com/OMCHOKSI108/CodeSecurityAuditAgent/pull/4
+Link : https://github.com/HitenKatariya/CodeSecurityAuditAgent/pull/4
 ![PR Review Bugs](docs/screenshots/github_pr_review_bugs.png)
 *Detected vulnerabilities with inline PR comments*
 
@@ -42,7 +42,7 @@ Link : https://github.com/OMCHOKSI108/CodeSecurityAuditAgent/pull/4
 
 ### Dataset
 
-[![HF Dataset](docs/screenshots/hf-dataset.png)](https://huggingface.co/datasets/OMCHOKSI108/CodeSecAudit-RAG)
+[![HF Dataset](docs/screenshots/hf-dataset.png)](https://huggingface.co/datasets/HitenKatariya/CodeSecAudit-RAG)
 *CodeSecAudit-RAG dataset on Hugging Face — click to explore*
 
 ### API & Services
@@ -90,7 +90,7 @@ If you prefer not to use the GitHub App, you can also trigger reviews via GitHub
 
 ```yaml
 - name: Run CodeSecAudit Review
-  uses: OMCHOKSI108/codesec-audit-dataset/.github/actions/review@main
+  uses: HitenKatariya/codesec-audit-dataset/.github/actions/review@main
 ```
 
 ---
@@ -204,7 +204,7 @@ The custom dataset powers both rule-based evaluation and the RAG retrieval servi
 | Similarity | Cosine |
 | Sources | CodeXGLUE + OWASP Benchmark Python + OWASP Cheat Sheet Series |
 
-**Hugging Face Dataset**: https://huggingface.co/datasets/OMCHOKSI108/CodeSecAudit-RAG
+**Hugging Face Dataset**: https://huggingface.co/datasets/HitenKatariya/CodeSecAudit-RAG
 
 **Build the index locally**:
 ```bash
@@ -285,7 +285,7 @@ Full documentation: [docs/github_action.md](docs/github_action.md)
 
 The RAG retrieval service runs as a **separate Hugging Face Space** to keep the main deployment lightweight (~500 MB).
 
-**Live endpoint**: https://OMCHOKSI108-codereview-agent.hf.space
+**Live endpoint**: https://HitenKatariya-codereview-agent.hf.space
 
 | Endpoint | Method | Description |
 |---|---|---|
@@ -297,7 +297,7 @@ The RAG retrieval service runs as a **separate Hugging Face Space** to keep the 
 ```env
 CODESEC_ENABLE_RAG=true
 CODESEC_RAG_MODE=remote
-CODESEC_RAG_SERVICE_URL=https://OMCHOKSI108-codereview-agent.hf.space
+CODESEC_RAG_SERVICE_URL=https://HitenKatariya-codereview-agent.hf.space
 CODESEC_RAG_API_KEY=your-key-here
 ```
 
@@ -370,7 +370,7 @@ The user flow for the SaaS version:
 6. Limit reached → Resend email with upgrade prompt
 7. Contact owner for custom plans
 
-Owner contact: **omchoksi108@gmail.com**
+Owner contact: **hitenvk22@gmail.com**
 
 Current status:
 - [x] Datasets + RAG corpus
@@ -445,4 +445,4 @@ CodeSecAudit AI is a **defensive security tool**:
 
 For questions, custom plans, or limit increases:
 
-**omchoksi108@gmail.com**
+**hitenvk22@gmail.com**

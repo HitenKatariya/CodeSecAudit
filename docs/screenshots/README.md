@@ -48,5 +48,5 @@ Capture the following screenshots and save them in this directory:
 ### External Services (7–9)
 
 1. Open https://www.kaggle.com/code/omchoksi04/codereview and capture (screenshot 7)
-2. Open https://huggingface.co/datasets/OMCHOKSI108/CodeSecAudit-RAG and capture (screenshot 8)
-3. Run `curl https://OMCHOKSI108-codereview-agent.hf.space/health` and capture the response (screenshot 9)
+2. Open https://huggingface.co/datasets/HitenKatariya/CodeSecAudit-RAG and capture (screenshot 8)
+3. Run `curl https://HitenKatariya-codereview-agent.hf.space/health` and capture the response (screenshot 9)

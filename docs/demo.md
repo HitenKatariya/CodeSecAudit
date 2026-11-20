@@ -87,10 +87,10 @@ Verifies: health endpoint → review API → review detail → stats → Streaml
 
 ```bash
 # Health
-curl https://OMCHOKSI108-codereview-agent.hf.space/health
+curl https://HitenKatariya-codereview-agent.hf.space/health
 
 # Search
-curl -X POST https://OMCHOKSI108-codereview-agent.hf.space/rag/search \
+curl -X POST https://HitenKatariya-codereview-agent.hf.space/rag/search \
   -H "Content-Type: application/json" \
   -d '{"query": "SQL injection prevention", "top_k": 2}'
 ```
