@@ -159,13 +159,21 @@ async def test_sync_repo_pr_reviews_persists_findings_with_confidence(monkeypatc
 
         res = await gh_sync.sync_repo_pr_reviews(db, org.id, repo)
         await db.commit()
-        assert res == {"synced": 1, "skipped": 0}
+        assert res == {"synced": 1, "skipped": 0, "repaired": 0}
 
         rev = (await db.execute(select(Review).where(Review.repository_id == repo.id))).scalar_one()
         assert rev.verdict == "REQUEST_CHANGES"
         assert "feat: severe vuln PR" in rev.summary
         fin = (await db.execute(select(Finding).where(Finding.review_id == rev.id))).scalar_one()
         assert fin.cwe_id == "CWE-89"
+
+        # A stale verdict from an older import is repaired on the next sync.
+        rev.verdict = "WARNING"
+        await db.commit()
+        res = await gh_sync.sync_repo_pr_reviews(db, org.id, repo)
+        await db.commit()
+        assert res == {"synced": 0, "skipped": 0, "repaired": 1}
+        assert (await db.execute(select(Review).where(Review.id == rev.id))).scalar_one().verdict == "REQUEST_CHANGES"
 
     await engine.dispose()
 

@@ -73,7 +73,7 @@ async def sync_repo_pr_reviews(
 
     existing_rows = (await db.execute(select(Review).where(Review.repository_id == repo.id))).scalars().all()
     existing_by_pr_sha = {(r.pr_number, (r.commit_sha or "")[:12]): r for r in existing_rows}
-    synced, skipped = 0, 0
+    synced, skipped, repaired = 0, 0, 0
 
     for pr, bot_comment in pr_comments:
         pr_num = int(pr.get("number") or 0)
@@ -90,9 +90,20 @@ async def sync_repo_pr_reviews(
 
         existing = existing_by_pr_sha.get((pr_num, short_sha)) or existing_by_pr_sha.get((pr_num, head_sha[:12]))
         if existing:
-            if pr_title not in (existing.summary or ""):
+            needs_repair = (
+                existing.verdict != verdict
+                or abs((existing.risk_score or 0.0) - risk_val) > 0.001
+                or (existing.commit_sha or "").lower() != (parsed["commit_sha"] or "").lower()
+            )
+            if needs_repair:
+                existing.verdict = verdict
+                existing.risk_score = risk_val
+                existing.commit_sha = parsed["commit_sha"]
+                repaired += 1
+            if summary not in (existing.summary or ""):
                 existing.summary = summary
-            skipped += 1
+            if not needs_repair:
+                skipped += 1
             continue
 
         created_raw = bot_comment.get("created_at")
@@ -116,7 +127,7 @@ async def sync_repo_pr_reviews(
         existing_by_pr_sha[(pr_num, short_sha)] = rev
         synced += 1
 
-    return {"synced": synced, "skipped": skipped}
+    return {"synced": synced, "skipped": skipped, "repaired": repaired}
 
 
 async def discover_org_installations(db: AsyncSession, org_id: str, hint_logins: Optional[list[str]] = None) -> list[GitHubInstallation]:
@@ -159,13 +170,14 @@ async def sync_org_github_reviews(db: AsyncSession, org_id: str, github_token: O
 
     repos = (await db.execute(select(Repository).where(Repository.organization_id == org_id))).scalars().all()
     fallback_inst = insts[0].installation_id if insts else None
-    total_synced, total_skipped = 0, 0
+    total_synced, total_skipped, total_repaired = 0, 0, 0
     for repo in repos:
         res = await sync_repo_pr_reviews(db, org_id, repo, installation_id=repo_install_map.get(repo.github_repo_id, fallback_inst), github_token=github_token)
         total_synced += res["synced"]
         total_skipped += res["skipped"]
+        total_repaired += res["repaired"]
     await db.commit()
-    return {"synced": total_synced, "skipped": total_skipped, "repositories": len(repos)}
+    return {"synced": total_synced, "skipped": total_skipped, "repaired": total_repaired, "repositories": len(repos)}
 
 
 async def ensure_org_history_synced(db: AsyncSession, org_id: str) -> None:
