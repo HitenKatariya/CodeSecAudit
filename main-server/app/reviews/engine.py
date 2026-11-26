@@ -18,11 +18,14 @@ RULES: list[dict[str, Any]] = [
         "cwe_id": "CWE-89",
         "severity": "critical",
         "patterns": [
-            r"(?:SELECT|INSERT|UPDATE|DELETE)\s+.*?\+\s*(?:request|req\.|input|params)",
-            r"execute\s*\(\s*['\"].*?['\"]\s*\+",
-            r"query\s*\(\s*['\"].*?['\"]\s*\+",
-            r"cursor\.execute\s*\(\s*['\"].*?['\"]\s*\+",
+            r"(?:SELECT|INSERT|UPDATE|DELETE)\s+.*?\+\s*[A-Za-z0-9_.]+",
+            r"(?:db|cursor|conn|session)?\.?execute\s*\(\s*['\"].*?['\"]\s*\+",
+            r"(?:db|cursor|conn|session)?\.?query\s*\(\s*['\"].*?['\"]\s*\+",
+            r"(?:db|cursor|conn|session)?\.?execute\s*\(\s*f['\"].*?\{.*?\}",
+            r"(?:db|cursor|conn|session)?\.?query\s*\(\s*f['\"].*?\{.*?\}",
             r"(?:SELECT|INSERT|UPDATE|DELETE).*?f['\"].*?\{.*?\}",
+            r"(?:SELECT|INSERT|UPDATE|DELETE).*?\.format\s*\(",
+            r"(?:db|cursor|conn|session)?\.?execute\s*\(\s*['\"][^'\"]*?%s[^'\"]*?['\"]\s*%",
         ],
         "explanation": "Building SQL queries with string concatenation allows SQL injection.",
     },
@@ -32,7 +35,8 @@ RULES: list[dict[str, Any]] = [
         "cwe_id": "CWE-78",
         "severity": "critical",
         "patterns": [
-            r"subprocess\.(?:call|Popen|run|check_output)\s*\(.*?shell\s*=\s*True",
+            r"subprocess\.(?:call|Popen|run|check_output|check_call)\s*\(.*?shell\s*=\s*True",
+            r"subprocess\.(?:call|Popen|run|check_output|check_call)\s*\(",
             r"os\.system\s*\(",
             r"os\.popen\s*\(",
         ],
@@ -85,6 +89,78 @@ MAX_FINDINGS_PER_RULE = 3
 MAX_TOTAL_FINDINGS = 20
 
 
+def _parse_suppressed_cwes(line: str, tag: str) -> Optional[set[str]]:
+    """Parse suppressed CWEs after tag ('codesec-ignore-next-line' or 'codesec-ignore').
+    
+    Returns a set of uppercase CWE IDs (e.g. {'CWE-89'}),
+    or None if all findings should be suppressed on target line (wildcard / CWE-XXX).
+    """
+    pattern = rf"{tag}\s*(?::\s*([^\n\r]+))?"
+    m = re.search(pattern, line, re.IGNORECASE)
+    if not m or not m.group(1):
+        return None  # No colon or empty -> suppress all
+    rest = m.group(1).strip()
+    if not rest or "cwe-xxx" in rest.lower() or "all" in rest.lower():
+        return None  # Wildcard CWE-XXX or all -> suppress all
+    cwes = {c.upper() for c in re.findall(r"CWE-\d+", rest, re.IGNORECASE)}
+    return cwes if cwes else None
+
+
+def _is_parameterized_query(line: str) -> bool:
+    """Detect whether a query line uses safe parameterization or prepared statements.
+    
+    Checks for:
+    1. Parameters passed as tuple, dict, or list argument to execute/query methods:
+       e.g. db.execute(sql, (param,)), db.execute(sql, {"param": ...}), cursor.execute(..., [...])
+    2. Presence of query parameter placeholders (%s, ?, :param, $1) combined with query execution
+    """
+    # 1. Check for execute/query calls with parameterized arguments (tuple, dict, list, or params var)
+    # e.g. db.execute(sql, {"id": user_id}), cursor.execute(sql, (param,)), db.execute(sql, [param])
+    exec_param_pattern = r"(?:execute|query|executemany)\s*\([^,]+,\s*(?:\{|\(|\[|dict\b|tuple\b|list\b|[A-Za-z_]\w*)"
+    if re.search(exec_param_pattern, line):
+        # Ensure it's not simply string concat where 2nd arg doesn't exist
+        # Check if there is an actual parameter argument
+        if re.search(r"(?:execute|query|executemany)\s*\([^,]+,\s*(?:\{.*?\}|\(.*?\)|\[.*?\]|dict\(|tuple\(|list\(|[A-Za-z_]\w*\s*\))", line):
+            return True
+
+    # 2. Check for parameter placeholders like %s, ?, :param, $1 inside SQL strings
+    # But ensure % is not being used as Python string formatting operator (% var)
+    has_named_param = bool(re.search(r"['\"][^'\"]*:[a-zA-Z_]\w*[^'\"]*['\"]", line))
+    has_qmark = bool(re.search(r"['\"][^'\"]*\?[^'\"]*['\"]", line))
+    has_dollar_param = bool(re.search(r"['\"][^'\"]*\$\d+[^'\"]*['\"]", line))
+    has_percent_s = bool(re.search(r"['\"][^'\"]*%s[^'\"]*['\"]", line))
+    is_percent_formatting = bool(re.search(r"['\"][^'\"]*%s[^'\"]*['\"]\s*%", line))
+
+    if (has_named_param or has_qmark or has_dollar_param or (has_percent_s and not is_percent_formatting)):
+        # If placeholders exist and query is parameterized or passed to execute/query with parameters
+        if re.search(r"(?:execute|query)\s*\(.+?,\s*(?:\{|\(|\[|[A-Za-z_]\w*)", line):
+            return True
+
+    return False
+
+
+def _is_safe_command(line: str) -> bool:
+    """Detect whether a command execution line uses safe arguments.
+    
+    Checks for:
+    1. Safe arguments when shlex.quote(...) is used
+    2. Safe arguments when a list without shell=True is used
+    """
+    if "shlex.quote(" in line:
+        return True
+
+    has_shell_true = bool(re.search(r"shell\s*=\s*True", line, re.IGNORECASE))
+    if not has_shell_true:
+        # Check if subprocess is called with a list argument: subprocess.run([...])
+        if re.search(r"subprocess\.(?:call|Popen|run|check_output|check_call)\s*\(\s*\[", line):
+            return True
+        # Or explicitly shell=False
+        if re.search(r"subprocess\.(?:call|Popen|run|check_output|check_call)\s*\(", line) and re.search(r"shell\s*=\s*False", line, re.IGNORECASE):
+            return True
+
+    return False
+
+
 def _build_suppression_map(lines: list[str]) -> dict[int, Optional[set[str]]]:
     suppressed: dict[int, Optional[set[str]]] = {}
     for i, line in enumerate(lines):
@@ -92,11 +168,27 @@ def _build_suppression_map(lines: list[str]) -> dict[int, Optional[set[str]]]:
         if not stripped:
             continue
         if "codesec-ignore-next-line" in stripped:
-            m = re.search(r"codesec-ignore-next-line\s*:\s*(CWE-\d+)", stripped)
-            suppressed.setdefault(i + 2, set()).add(m.group(1)) if m else suppressed.update({i + 2: None})
+            cwes = _parse_suppressed_cwes(stripped, "codesec-ignore-next-line")
+            target_line = i + 2
+            if cwes is None:
+                suppressed[target_line] = None
+            else:
+                existing = suppressed.get(target_line)
+                if existing is not None:
+                    existing.update(cwes)
+                elif target_line not in suppressed:
+                    suppressed[target_line] = set(cwes)
         elif "codesec-ignore" in stripped:
-            m = re.search(r"codesec-ignore\s*:\s*(CWE-\d+)", stripped)
-            suppressed.setdefault(i + 1, set()).add(m.group(1)) if m else suppressed.update({i + 1: None})
+            cwes = _parse_suppressed_cwes(stripped, "codesec-ignore")
+            target_line = i + 1
+            if cwes is None:
+                suppressed[target_line] = None
+            else:
+                existing = suppressed.get(target_line)
+                if existing is not None:
+                    existing.update(cwes)
+                elif target_line not in suppressed:
+                    suppressed[target_line] = set(cwes)
     return suppressed
 
 
@@ -115,18 +207,36 @@ def scan_diff_lines(
         if not stripped:
             continue
         if "codesec-ignore-next-line" in stripped:
-            m = re.search(r"codesec-ignore-next-line\s*:\s*(CWE-\d+)", stripped)
+            cwes = _parse_suppressed_cwes(stripped, "codesec-ignore-next-line")
             next_line_no = lines_with_numbers[idx + 1][0] if idx + 1 < len(lines_with_numbers) else line_no + 1
-            suppressed.setdefault(next_line_no, set()).add(m.group(1)) if m else suppressed.update({next_line_no: None})
+            if cwes is None:
+                suppressed[next_line_no] = None
+            else:
+                existing = suppressed.get(next_line_no)
+                if existing is not None:
+                    existing.update(cwes)
+                elif next_line_no not in suppressed:
+                    suppressed[next_line_no] = set(cwes)
         elif "codesec-ignore" in stripped:
-            m = re.search(r"codesec-ignore\s*:\s*(CWE-\d+)", stripped)
-            suppressed.setdefault(line_no, set()).add(m.group(1)) if m else suppressed.update({line_no: None})
+            cwes = _parse_suppressed_cwes(stripped, "codesec-ignore")
+            if cwes is None:
+                suppressed[line_no] = None
+            else:
+                existing = suppressed.get(line_no)
+                if existing is not None:
+                    existing.update(cwes)
+                elif line_no not in suppressed:
+                    suppressed[line_no] = set(cwes)
 
     for line_no, line in lines_with_numbers:
         if len(findings) >= MAX_TOTAL_FINDINGS:
             break
         stripped = line.strip()
         if not stripped:
+            continue
+
+        # Skip comment lines
+        if stripped.startswith(("#", "//", "/*", "*")):
             continue
 
         for rule in RULES:
@@ -136,10 +246,20 @@ def scan_diff_lines(
             for pattern in rule["patterns"]:
                 if re.search(pattern, stripped, re.IGNORECASE):
                     cwe = rule["cwe_id"]
+
+                    # Check developer inline suppression
                     if line_no in suppressed:
                         sc = suppressed[line_no]
                         if sc is None or cwe in sc:
                             continue
+
+                    # Check false-positive suppression for SQL Injection (CWE-89)
+                    if cwe == "CWE-89" and _is_parameterized_query(stripped):
+                        continue
+
+                    # Check false-positive suppression for Command Injection (CWE-78)
+                    if cwe == "CWE-78" and _is_safe_command(stripped):
+                        continue
 
                     key = f"{file_path}:{line_no}:{cwe}:{stripped}"
                     if key in seen:

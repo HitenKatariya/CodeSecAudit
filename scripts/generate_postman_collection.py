@@ -754,7 +754,7 @@ pm.test("Status code is 200", function () {
             base_var="rag_url",
             headers={"X-Internal-RAG-Token": "{{rag_service_token}}"},
             body_json={
-                "corpus_url": "https://huggingface.co/datasets/HitenKatariya/CodeSecAudit-RAG/resolve/main/rag/rag_corpus.jsonl.gz",
+                "corpus_url": "https://huggingface.co/datasets/hitenvk22/CodeSecAudit-RAG-Shuffled/resolve/main/rag/rag_corpus.jsonl.gz",
                 "max_documents": 5
             },
             description="Indexes a batch of OWASP corpus chunks into Qdrant.",
@@ -878,9 +878,9 @@ def build_environment(env_type: str):
     else:
         name = "CodeSecAudit AI - Render Cloud Production Environment"
         values = [
-            {"key": "main_url", "value": "https://codesec-api.onrender.com", "type": "default", "enabled": True},
-            {"key": "rag_url", "value": "https://codesec-rag.onrender.com", "type": "default", "enabled": True},
-            {"key": "client_url", "value": "https://codesec-website.onrender.com", "type": "default", "enabled": True},
+            {"key": "main_url", "value": "https://codesec-main-e3dq.onrender.com", "type": "default", "enabled": True},
+            {"key": "rag_url", "value": "https://codesec-rag-xp4b.onrender.com", "type": "default", "enabled": True},
+            {"key": "client_url", "value": "https://codesec-client-v6a6.onrender.com", "type": "default", "enabled": True},
             {"key": "codesec_session", "value": "test-session-admin", "type": "secret", "enabled": True},
             {"key": "rag_service_token", "value": "dev_rag_service_token_secret", "type": "secret", "enabled": True},
             {"key": "github_webhook_secret", "value": "dev_github_webhook_secret_key", "type": "secret", "enabled": True},

@@ -31,3 +31,12 @@ next-env.d.ts
 .github-app-manifest.json
 secrets/
 *.pem
+
+# Test & compiler artifacts
+test-results/
+playwright-report/
+*.tsbuildinfo
+
+*.mp4
+videos/
+

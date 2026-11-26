@@ -254,7 +254,7 @@ export default function LoginPage() {
               className="btn btn-ghost btn-sm"
               style={{ flex: 1, fontSize: "0.75rem", border: "1px dashed var(--border-subtle)", fontFamily: "var(--font-mono)" }}
             >
-              ⚡ Quick Access (Admin)
+              Quick Access (Admin)
             </button>
             <button
               type="button"
@@ -262,7 +262,7 @@ export default function LoginPage() {
               className="btn btn-ghost btn-sm"
               style={{ flex: 1, fontSize: "0.75rem", border: "1px dashed var(--border-subtle)", fontFamily: "var(--font-mono)" }}
             >
-              ⚡ Quick Access (Auditor)
+              Quick Access (Auditor)
             </button>
           </div>
 

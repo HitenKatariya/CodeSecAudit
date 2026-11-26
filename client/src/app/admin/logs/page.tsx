@@ -80,7 +80,7 @@ export default function AdminLogsPage() {
             onClick={() => loadLogs(activeService)}
             loading={loading}
           >
-            🔄 Refresh Stream
+            Refresh Stream
           </Button>
         }
       />

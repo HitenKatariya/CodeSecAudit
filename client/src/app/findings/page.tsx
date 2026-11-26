@@ -6,6 +6,8 @@ import { fetchFindings } from "@/lib/api";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { FindingsTable } from "@/components/findings/FindingsTable";
 import { Button } from "@/components/ui/Button";
+import { StatusDot } from "@/components/ui/Badge";
+import { ShieldCheckIcon } from "@/components/ui/Icons";
 
 export default function FindingsPage() {
   const [findings, setFindings] = useState<Finding[]>([]);
@@ -47,8 +49,8 @@ export default function FindingsPage() {
         <div className="banner-alert">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="badge badge-critical">🔴 {criticalCount} Critical</span>
-              {highCount > 0 && <span className="badge badge-high">🟠 {highCount} High</span>}
+              <span className="badge badge-critical flex items-center"><StatusDot color="var(--crit-color)" /> {criticalCount} Critical</span>
+              {highCount > 0 && <span className="badge badge-high flex items-center"><StatusDot color="var(--high-color)" /> {highCount} High</span>}
               <span className="text-dim text-xs">&bull; {otherCount} Medium / Low</span>
             </div>
             <p className="text-xs text-main">
@@ -67,7 +69,7 @@ export default function FindingsPage() {
       ) : (
         <div className="p-3.5 rounded-lg border text-xs flex items-center justify-between" style={{ backgroundColor: "var(--pass-bg)", borderColor: "var(--pass-border)", color: "var(--pass-color)" }}>
           <div className="flex items-center gap-2">
-            <span>🛡️</span>
+            <ShieldCheckIcon size={16} className="text-emerald-500" />
             <span className="font-semibold">Zero Critical Findings: Clean security posture detected.</span>
           </div>
           <span className="text-muted text-[11px]">{findings.length} total monitored items</span>

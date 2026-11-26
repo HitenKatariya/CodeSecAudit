@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { RepositoriesTable } from "@/components/repositories/RepositoriesTable";
 import { RecentPRsTable } from "@/components/dashboard/RecentPRsTable";
-import { CheckCircleIcon, GitHubIcon } from "@/components/ui/Icons";
+import { CheckCircleIcon, GitHubIcon, AlertTriangleIcon, ShieldCheckIcon } from "@/components/ui/Icons";
 
 export default function DashboardPage() {
   const [repos, setRepos] = useState<Repository[]>([]);
@@ -145,7 +145,7 @@ export default function DashboardPage() {
               className="font-bold"
               icon={<GitHubIcon size={18} />}
             >
-              ⚡ 1-Click Install GitHub App
+              Install GitHub App
             </Button>
           </a>
         </div>
@@ -194,7 +194,7 @@ export default function DashboardPage() {
         <div className="banner-alert">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="badge badge-critical">⚠️ Action Required</span>
+              <span className="badge badge-critical flex items-center gap-1.5"><AlertTriangleIcon size={13} /> Action Required</span>
               <span className="text-muted text-xs">&bull; {totalFindings} open findings</span>
             </div>
             <p className="text-sm text-main font-medium mt-1">
@@ -233,7 +233,7 @@ export default function DashboardPage() {
       ) : (
         <div className="p-3.5 rounded-lg border text-xs flex items-center justify-between" style={{ backgroundColor: "var(--pass-bg)", borderColor: "var(--pass-border)", color: "var(--pass-color)" }}>
           <div className="flex items-center gap-2">
-            <span>🛡️</span>
+            <ShieldCheckIcon size={16} className="text-emerald-500" />
             <span className="font-semibold">All Policy Gates Healthy: Zero critical security regressions detected.</span>
           </div>
           <span className="text-muted text-[11px]">{totalFindings} total informational/low findings</span>
@@ -265,14 +265,14 @@ export default function DashboardPage() {
           label="Critical Issues"
           value={String(criticalCount)}
           severity={criticalCount > 0 ? "critical" : "passed"}
-          subtitle={criticalCount > 0 ? "🔴 Blocking merges" : "✓ Clean posture"}
+          subtitle={criticalCount > 0 ? "Blocking merges" : "Clean posture"}
         />
 
         <MetricCard
           label="PRs Blocked"
           value={String(blockedPrsCount)}
           severity={blockedPrsCount > 0 ? "critical" : "passed"}
-          subtitle={blockedPrsCount > 0 ? "Strict policy gate active" : "✓ All gates passing"}
+          subtitle={blockedPrsCount > 0 ? "Strict policy gate active" : "All gates passing"}
         />
       </div>
 

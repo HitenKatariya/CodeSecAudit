@@ -8,15 +8,16 @@ Capture the following screenshots and save them in this directory:
 
 | # | Screenshot | Description | Status |
 |---|---|---|---|
-| 1 | `pr-summary-comment.png` | GitHub PR page showing the CodeSecAudit summary comment at the bottom | Pending |
-| 2 | `inline-comment-eval.png` | Inline comment on an `eval()` line in the PR diff view | Pending |
-| 3 | `github-action-run.png` | Successful GitHub Action run log in the Actions tab | Pending |
-| 4 | `dashboard-stats.png` | Streamlit dashboard with stats cards, verdict chart, and recent reviews | Pending |
-| 5 | `review-detail.png` | Review detail page showing full issue breakdown | Pending |
-| 6 | `api-docs.png` | FastAPI Swagger UI at `/docs` showing all endpoints | Pending |
-| 7 | `kaggle-notebook.png` | Kaggle notebook preview showing dataset exploration | Pending |
-| 8 | `hf-dataset.png` | Hugging Face dataset page for CodeSecAudit-RAG | Pending |
-| 9 | `rag-service-health.png` | RAG service health endpoint response | Pending |
+| 1 | `github_pr_review_severe.png` | GitHub PR page showing CodeSecAudit blocking merge on critical/high risk vulnerabilities | Captured |
+| 2 | `github_pr_review_healthy.png` | GitHub PR page showing CodeSecAudit approving clean diff (0.00 / 10.0 CVSS risk) | Captured |
+| 3 | `github_pr_review_bugs.png` | Detected vulnerabilities with inline PR comments | Captured |
+| 4 | `github_pr_review_suggest.png` | AI-powered fix suggestions in pull request review | Captured |
+| 5 | `dashboard-stats.png` | Streamlit dashboard with stats cards, verdict chart, and recent reviews | Pending |
+| 6 | `review-detail.png` | Review detail page showing full issue breakdown | Pending |
+| 7 | `codesecrag_api_swagger.png` | FastAPI Swagger UI at `/docs` showing all endpoints | Captured |
+| 8 | `kaggle-notebook.png` | Kaggle notebook preview showing dataset exploration | Pending |
+| 9 | `hf-dataset.png` | Hugging Face dataset page for CodeSecAudit-RAG | Captured |
+| 10 | `rag_service_swagger.png` | RAG service Swagger endpoint documentation | Captured |
 
 ## How to Capture
 
@@ -47,6 +48,6 @@ Capture the following screenshots and save them in this directory:
 
 ### External Services (7–9)
 
-1. Open https://www.kaggle.com/code/omchoksi04/codereview and capture (screenshot 7)
-2. Open https://huggingface.co/datasets/HitenKatariya/CodeSecAudit-RAG and capture (screenshot 8)
-3. Run `curl https://HitenKatariya-codereview-agent.hf.space/health` and capture the response (screenshot 9)
+1. Open https://www.kaggle.com/code/hitenkatariya/codesecaudit-rag and capture (screenshot 7)
+2. Open https://huggingface.co/datasets/hitenvk22/CodeSecAudit-RAG-Shuffled and capture (screenshot 8)
+3. Run `curl https://codesec-rag-xp4b.onrender.com/health` and capture the response (screenshot 9)

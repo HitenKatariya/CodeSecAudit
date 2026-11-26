@@ -23,7 +23,9 @@ const requiredRoutes = [
   "settings/page.tsx",
   "admin/logs/page.tsx",
   "login/page.tsx",
+  "invite/accept/page.tsx",
 ];
+
 
 for (const route of requiredRoutes) {
   test(`SaaS Route exists: ${route}`, () => {

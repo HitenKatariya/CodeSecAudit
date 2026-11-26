@@ -1,37 +1,79 @@
-# CodeSecAudit AI
+<div align="center">
 
-Enterprise AI Pull Request Reviewer for Security, Code Quality, and RAG-based Secure Coding Guidance
+# 🛡️ CodeSecAudit AI
 
-CodeSecAudit AI acts like an AI senior engineer inside GitHub pull requests, detecting risky code, posting inline comments, suggesting fixes, and tracking review analytics before code is merged.
+### Autonomous AI Security Engineer for High-Velocity Engineering Teams
+**Block zero-days, CVEs, and OWASP Top 10 vulnerabilities in GitHub Pull Requests before they reach production.**
 
-[![Python](https://img.shields.io/badge/Python-3.11+-blue)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688)](https://fastapi.tiangolo.com/)
-[![Docker](https://img.shields.io/badge/Docker-compose-2496ED)](https://docs.docker.com/compose/)
-[![Hugging Face Dataset](https://img.shields.io/badge/HF-Dataset-FFD21E)](https://huggingface.co/datasets/HitenKatariya/CodeSecAudit-RAG)
-[![Hugging Face Space](https://img.shields.io/badge/HF-RAG%20Service-FFD21E)](https://HitenKatariya-codereview-agent.hf.space)
-[![Kaggle](https://img.shields.io/badge/Kaggle-Notebook-20BEFF)](https://www.kaggle.com/code/omchoksi04/codereview)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Live Platform](https://img.shields.io/badge/Production%20Web%20App-Live%20on%20Render-46E3B7?style=for-the-badge&logo=render&logoColor=white)](https://codesec-client-v6a6.onrender.com)
+[![GitHub App](https://img.shields.io/badge/GitHub%20App-Certified%20App-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/apps/codesecurityaudit-app)
+[![OWASP ASVS](https://img.shields.io/badge/OWASP-ASVS%20v4.0.3-orange?style=for-the-badge&logo=owasp&logoColor=white)](https://owasp.org/www-project-application-security-verification-standard/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
+
+<br/>
+
+[![CodeSecAudit AI End-to-End Walkthrough](docs/assets/codesecaudit_demo.gif)](https://codesec-client-v6a6.onrender.com)
+
+*⚡ **Live Demo Showcase (Sped-Up Walkthrough)**: Autonomous review lifecycle — VS Code vulnerability detection, automated merge block, synchronized commit re-review & approval, and multi-collaborator team intelligence console.*
+
+<br/>
+
+[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Next.js](https://img.shields.io/badge/Next.js-14-000000?style=flat-square&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Redis](https://img.shields.io/badge/Redis-7-DC382D?style=flat-square&logo=redis&logoColor=white)](https://redis.io/)
+[![Qdrant](https://img.shields.io/badge/Qdrant-Vector%20DB-DC2626?style=flat-square&logo=qdrant&logoColor=white)](https://qdrant.tech/)
+[![Hugging Face Dataset](https://img.shields.io/badge/HF-Dataset-FFD21E?style=flat-square&logo=huggingface&logoColor=black)](https://huggingface.co/datasets/hitenvk22/CodeSecAudit-RAG-Shuffled)
+[![Kaggle](https://img.shields.io/badge/Kaggle-Notebook-20BEFF?style=flat-square&logo=kaggle&logoColor=white)](https://www.kaggle.com/code/hitenkatariya/codesecaudit-rag)
+
+</div>
 
 ---
 
-## Live Links
+## 🚀 The Autonomous Security Guardrail Built for Speed
 
-| Asset | Link |
-|---|---|
-| Kaggle Notebook | https://www.kaggle.com/code/hitenkatariya/codesecaudit-rag |
-| Hugging Face Dataset | https://huggingface.co/datasets/hitenvk22/CodeSecAudit-RAG-Shuffled |
-| RAG Service (live) | https://codesec-rag-xp4b.onrender.com |
-| Live PR Evaluation (CVSS 7.5/10.0) | https://github.com/HitenKatariya/CodeSecAudit/pull/14 |
-| GitHub App | https://github.com/apps/codesecurityaudit-app |
-| App (Client) | https://codesec-client-v6a6.onrender.com |
-| API (main-server) | https://codesec-main-e3dq.onrender.com |
+CodeSecAudit AI acts as an **autonomous Staff Security Engineer** embedded directly into your GitHub CI/CD workflows and engineering cockpit. It intercepts every pull request, performs deep AST and RAG-guided vulnerability analysis, enforces OWASP ASVS v4.0.3 compliance, posts actionable inline fixes, and dynamically re-reviews upon every commit until the PR is provably safe.
+
+### 🌟 Key Superpowers
+- **⚡ Autonomous PR Gatekeeper**: Automatically blocks PR merges (`🚫 MERGE BLOCKED`) when high/critical vulnerabilities are detected (SQLi, Command Injection, Secret Leaks, Insecure Deserialization).
+- **🔄 Synchronize-Aware Re-Review**: Listens for `pull_request.synchronize` events — when developers push clean code fixes, the bot instantly re-evaluates the delta and flips the verdict to `✅ APPROVE` (CVSS 0.00 / 10).
+- **🎯 Zero False Positives**: Intelligent suppression engine accurately handles parameterized SQL queries (`db.execute(sql, params)`), safe shell sanitizers (`shlex.quote`), and developer inline directives (`# codesec-ignore: CWE-XXX`).
+- **📊 Real-Time Security Telemetry**: Next.js 14 console with active Pull Request inspection, Finding triage, Security Trends with MTTR curves, OWASP ASVS audit reports, and multi-tenant Team management.
+- **🤝 Multi-User Team Synchronization**: Seamlessly manage team members across GitHub accounts with real-time invitation workflows, avatar syncing, and granular role assignments.
+
+---
+
+## 🔗 Live Production Deployment & Real PR Demonstrations
+
+| Deployment / Showcase | Description | Live Link |
+|---|---|---|
+| **Frontend Web Console** | Next.js 14 Production Dashboard, Telemetry & Compliance | [codesec-client-v6a6.onrender.com](https://codesec-client-v6a6.onrender.com) |
+| **Backend API Gateway** | FastAPI REST & GitHub Webhook Processing Engine | [codesec-main-e3dq.onrender.com](https://codesec-main-e3dq.onrender.com) |
+| **RAG Security Service** | Semantic Search across 2,800+ OWASP Benchmark Docs | [codesec-rag-xp4b.onrender.com](https://codesec-rag-xp4b.onrender.com) |
+| **GitHub App** | One-click installation on any GitHub repository | [github.com/apps/codesecurityaudit-app](https://github.com/apps/codesecurityaudit-app) |
+| **🔥 PR #14: Live CVSS 7.5 Evaluation** | Automated vulnerability detection, CVSS scoring, and executive review triage | [PR #14 Live Case Study](https://github.com/HitenKatariya/CodeSecAudit/pull/14) |
+| **🛡️ PR #13 & #15: Gate Verification** | Severe deserialization/SQLi block ([PR #13](https://github.com/HitenKatariya/CodeSecAudit/pull/13)) & clean JWT verifier audit ([PR #15](https://github.com/HitenKatariya/CodeSecAudit/pull/15)) | [PR #13](https://github.com/HitenKatariya/CodeSecAudit/pull/13) / [PR #15](https://github.com/HitenKatariya/CodeSecAudit/pull/15) |
+| **Hugging Face Dataset** | Curated RAG benchmark dataset with 2,800+ OWASP pairs | [CodeSecAudit-RAG-Shuffled](https://huggingface.co/datasets/hitenvk22/CodeSecAudit-RAG-Shuffled) |
+| **Kaggle Kernel** | Comprehensive model training and evaluation notebook | [CodeSecAudit Review Kernel](https://www.kaggle.com/code/hitenkatariya/codesecaudit-rag) |
 
 ---
 
 ## Screenshots
 
-### PR Review — Inline Comments 
-Link : https://github.com/HitenKatariya/CodeSecurityAuditAgent/pull/14
+### Pull Request Security Reviews
+
+#### Severe PR Review — Merge Blocked (Critical/High Risk Vulnerabilities)
+Link : https://github.com/HitenKatariya/CodeSecAudit/pull/13
+![Severe PR Review Blocked](docs/screenshots/github_pr_review_severe.png)
+*Automated PR gate blocking merge on critical security vulnerabilities with executive triage matrix and remediation guides*
+
+#### Healthy PR Review — Merge Allowed (Zero Vulnerabilities / Clean Diff)
+![Healthy PR Review Approved](docs/screenshots/github_pr_review_healthy.png)
+*Automated security audit approval for clean pull requests passing all OWASP Top 10 policies*
+
+### PR Review — Inline Comments
+Link : https://github.com/HitenKatariya/CodeSecAudit/pull/14
 ![PR Review Bugs](docs/screenshots/github_pr_review_bugs.png)
 *Detected vulnerabilities with inline PR comments*
 
@@ -72,7 +114,7 @@ CodeSecAudit AI runs as a GitHub App that automatically reviews pull requests.
 
 ### Install on your repository
 
-1. Visit the [GitHub App installation page](https://github.com/apps/codesecaudit-ai/installations/new)
+1. Visit the [GitHub App installation page](https://github.com/apps/codesecurityaudit-app/installations/new)
 2. Choose your account or organization
 3. Select the repositories you want to review
 4. Click **Install**
@@ -124,7 +166,7 @@ CodeSecAudit AI addresses all four: automated detection with OWASP-aligned rules
 ```mermaid
 flowchart TD
     subgraph GitHub ["GitHub Infrastructure"]
-        Dev["👨‍💻 Developer"] -->|1. Opens/Updates PR| PR["Pull Request"]
+        Dev["Developer"] -->|1. Opens/Updates PR| PR["Pull Request"]
         PR -->|2. Webhook Event: pull_request.opened / synchronize| Hook["Webhook Dispatcher"]
         CheckRun["GitHub Check Run (Gate Status)"] -.->|Fails / Blocks Merge| PR
         Comment["PR Inline & Summary Comments"] -.->|Remediation Guide & Diff Fix| PR
@@ -161,13 +203,13 @@ flowchart TD
         Block --> Formatter["Enterprise Markdown Formatter"]
         Warn --> Formatter
         Pass --> Formatter
-        Formatter -->|10. Post Check Run (conclusion: failure/success)| CheckRun
+        Formatter -->|10. Post Check Run - failure or success| CheckRun
         Formatter -->|11. Post In-Depth PR Comment| Comment
         Formatter -->|12. Persist Audit Record & Findings| PostgresDB[("PostgreSQL 16")]
     end
 
     subgraph WebDashboard ["Real-Time Dashboard & User Control"]
-        User["🛡️ User / Auditor"] -->|PKCE GitHub OAuth| WebClient["Next.js Web Client"]
+        User["Auditor / User"] -->|PKCE GitHub OAuth| WebClient["Next.js Web Client"]
         WebClient -->|View PR Audits, CVSS Risk & Deep Dives| PostgresDB
         WebClient -->|1-Click Account Deletion & Uninstall| DeleteAPI["DELETE /v1/auth/account"]
         DeleteAPI -->|Wipes All Data & Uninstalls App| GitHub
@@ -202,7 +244,7 @@ The custom dataset powers both rule-based evaluation and the RAG retrieval servi
 | Similarity | Cosine |
 | Sources | CodeXGLUE + OWASP Benchmark Python + OWASP Cheat Sheet Series |
 
-**Hugging Face Dataset**: https://huggingface.co/datasets/HitenKatariya/CodeSecAudit-RAG
+**Hugging Face Dataset**: https://huggingface.co/datasets/hitenvk22/CodeSecAudit-RAG-Shuffled
 
 **Build the index locally**:
 ```bash
@@ -215,7 +257,7 @@ python scripts/build_rag_index.py
 
 Explore the dataset, RAG corpus, and a prototype Critic → Retriever → Fixer pipeline on Kaggle:
 
-https://www.kaggle.com/code/omchoksi04/codereview
+https://www.kaggle.com/code/hitenkatariya/codesecaudit-rag
 
 The notebook demonstrates:
 - Dataset exploration (28,548 records from CodeXGLUE + OWASP)
@@ -281,9 +323,9 @@ Full documentation: [docs/github_action.md](docs/github_action.md)
 
 ## RAG Service
 
-The RAG retrieval service runs as a **separate Hugging Face Space** to keep the main deployment lightweight (~500 MB).
+The RAG retrieval service runs on Render:
 
-**Live endpoint**: https://HitenKatariya-codereview-agent.hf.space
+**Live endpoint**: https://codesec-rag-xp4b.onrender.com
 
 | Endpoint | Method | Description |
 |---|---|---|
@@ -295,7 +337,7 @@ The RAG retrieval service runs as a **separate Hugging Face Space** to keep the 
 ```env
 CODESEC_ENABLE_RAG=true
 CODESEC_RAG_MODE=remote
-CODESEC_RAG_SERVICE_URL=https://HitenKatariya-codereview-agent.hf.space
+CODESEC_RAG_SERVICE_URL=https://codesec-rag-xp4b.onrender.com
 CODESEC_RAG_API_KEY=your-key-here
 ```
 
@@ -346,11 +388,11 @@ Full API reference with request/response examples: [docs/api_reference.md](docs/
 
 | Component | Host | Status |
 |---|---|---|
-| RAG Service | Hugging Face Space | **Live** |
-| API + Dashboard | Render / Railway | Planned |
-| Database | MongoDB Atlas | Designed |
-| Email | Resend | Designed |
-| GitHub App | GitHub Marketplace | Planned |
+| Frontend (Client) | Render (`https://codesec-client-v6a6.onrender.com`) | **Live** |
+| Backend (API) | Render (`https://codesec-main-e3dq.onrender.com`) | **Live** |
+| RAG Service | Render (`https://codesec-rag-xp4b.onrender.com`) | **Live** |
+| Database | PostgreSQL 16 | **Live** |
+| GitHub App | GitHub App (`codesecurityaudit-app`) | **Live** |
 
 See [docs/deployment_strategy.md](docs/deployment_strategy.md) and [docs/deployment_status.md](docs/deployment_status.md).
 
@@ -393,7 +435,7 @@ Current status:
 
 ## Website / SaaS Portal
 
-Public product portal at **[https://codesec-client.onrender.com](https://codesec-client.onrender.com)**
+Public product portal at **[https://codesec-client-v6a6.onrender.com](https://codesec-client-v6a6.onrender.com)**
 
 - **Landing page** — Product features, GitHub App install CTA, sign in CTA
 - **GitHub OAuth login** — Sign in with your GitHub account

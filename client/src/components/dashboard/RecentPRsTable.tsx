@@ -5,7 +5,7 @@ import Link from "next/link";
 import { PullRequest } from "@/types";
 import { Card } from "@/components/ui/Card";
 import { DataTable, Column } from "@/components/ui/DataTable";
-import { GateBadge } from "@/components/ui/Badge";
+import { GateBadge, StatusDot } from "@/components/ui/Badge";
 
 export function RecentPRsTable({ prs }: { prs: PullRequest[] }) {
   const columns: Column<PullRequest>[] = [
@@ -68,17 +68,19 @@ export function RecentPRsTable({ prs }: { prs: PullRequest[] }) {
       render: (pr) => (
         <div className="flex items-center gap-2 text-xs font-mono">
           {pr.findings_summary.critical > 0 && (
-            <span style={{ color: "var(--crit-color)" }} className="font-bold">
-              🔴 {pr.findings_summary.critical} Crit
+            <span style={{ color: "var(--crit-color)" }} className="font-bold flex items-center">
+              <StatusDot color="var(--crit-color)" /> {pr.findings_summary.critical} Crit
             </span>
           )}
           {pr.findings_summary.high > 0 && (
-            <span style={{ color: "var(--high-color)" }} className="font-semibold">
-              🟠 {pr.findings_summary.high} High
+            <span style={{ color: "var(--high-color)" }} className="font-semibold flex items-center">
+              <StatusDot color="var(--high-color)" /> {pr.findings_summary.high} High
             </span>
           )}
           {pr.findings_summary.critical === 0 && pr.findings_summary.high === 0 && (
-            <span style={{ color: "var(--pass-color)" }}>🟢 Clean</span>
+            <span style={{ color: "var(--pass-color)" }} className="flex items-center">
+              <StatusDot color="var(--pass-color)" /> Clean
+            </span>
           )}
         </div>
       ),

@@ -121,6 +121,34 @@ class TeamMemberResponse(BaseModel):
     last_active: str
 
 
+class InviteMemberRequest(BaseModel):
+    email: str
+    role: str = "Developer"
+
+
+class TeamInvitationResponse(BaseModel):
+    id: str
+    organization_id: Optional[str] = None
+    email: str
+    role: str
+    token: Optional[str] = None
+    invited_by: str
+    invited_by_user_id: Optional[str] = None
+    status: Optional[str] = "pending"
+    expires_at: Optional[str] = None
+    created_at: str
+    invite_url: Optional[str] = None
+    invite_link: str
+
+
+class AcceptInvitationResponse(BaseModel):
+    message: str
+    organization_id: str
+    user_id: str
+    role: str
+    status: str
+
+
 class ScoreProgressionItem(BaseModel):
     month: str
     score: int

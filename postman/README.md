@@ -161,9 +161,9 @@ The entire suite was executed end-to-end against the local live Docker stack:
 
 | Variable | Local Default | Render Default | Purpose |
 |---|---|---|---|
-| `main_url` | `http://localhost:8000` | `https://codesec-api.onrender.com` | Base URL for FastAPI main server |
-| `rag_url` | `http://localhost:8010` | `https://codesec-rag.onrender.com` | Base URL for RAG microservice |
-| `client_url` | `http://localhost:3000` | `https://codesec-website.onrender.com` | Base URL for Next.js web application |
+| `main_url` | `http://localhost:8000` | `https://codesec-main-e3dq.onrender.com` | Base URL for FastAPI main server |
+| `rag_url` | `http://localhost:8010` | `https://codesec-rag-xp4b.onrender.com` | Base URL for RAG microservice |
+| `client_url` | `http://localhost:3000` | `https://codesec-client-v6a6.onrender.com` | Base URL for Next.js web application |
 | `codesec_session` | `test-session-admin` | `test-session-admin` | HttpOnly cookie value for authenticated endpoints |
 | `rag_service_token` | `dev_rag_service_token_secret` | `dev_rag_service_token_secret` | Internal bearer token for RAG microservice |
 | `github_webhook_secret` | `dev_github_webhook_secret_key` | `dev_github_webhook_secret_key` | Secret used to calculate HMAC-SHA256 signature |

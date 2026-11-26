@@ -8,6 +8,7 @@ import {
   ReviewRecord,
   SecurityPolicy,
   TeamMember,
+  TeamInvitation,
   UserProfile,
 } from "@/types";
 
@@ -127,7 +128,7 @@ export async function fetchPullRequests(): Promise<PullRequest[]> {
       const high = rFindings.filter((f) => f.severity === "high").length;
       const med = rFindings.filter((f) => f.severity === "medium").length;
       const low = rFindings.filter((f) => f.severity === "low").length;
-      const repoFullName = r.repo_full_name || r.repository_id || "HitenKatariya/CodeSecurityAuditAgent";
+      const repoFullName = r.repo_full_name || r.repository_id || "HitenKatariya/CodeSecAudit";
       const prUrl = r.pr_url || (repoFullName.includes("/") ? `https://github.com/${repoFullName}/pull/${r.pr_number}` : undefined);
       return {
         id: r.id,
@@ -158,7 +159,7 @@ export async function fetchPullRequestById(id: string): Promise<PullRequest | nu
     const high = review.findings.filter((f) => f.severity === "high").length;
     const med = review.findings.filter((f) => f.severity === "medium").length;
     const low = review.findings.filter((f) => f.severity === "low").length;
-    const repoFullName = review.repo_full_name || review.repository_id || "HitenKatariya/CodeSecurityAuditAgent";
+    const repoFullName = review.repo_full_name || review.repository_id || "HitenKatariya/CodeSecAudit";
     const prUrl = review.pr_url || (repoFullName.includes("/") ? `https://github.com/${repoFullName}/pull/${review.pr_number}` : undefined);
     return {
       id: review.id,
@@ -289,6 +290,68 @@ export async function fetchTeamMembers(): Promise<TeamMember[]> {
   } catch {}
   return [];
 }
+
+export async function fetchTeamInvitations(): Promise<TeamInvitation[]> {
+  try {
+    const res = await fetch("/api/team/invitations", { credentials: "include" });
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        return data;
+      }
+    }
+  } catch {}
+  return [];
+}
+
+export async function inviteTeamMember(
+  email: string,
+  role: string = "Developer"
+): Promise<TeamInvitation | null> {
+  try {
+    const res = await fetch("/api/team/invite", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ email, role }),
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch {}
+  return null;
+}
+
+export async function revokeInvitation(id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`/api/team/invitations/${id}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function acceptInvitation(
+  token: string
+): Promise<{ ok: boolean; message: string; data?: any }> {
+  try {
+    const res = await fetch(`/api/team/invitations/${encodeURIComponent(token)}/accept`, {
+      method: "POST",
+      credentials: "include",
+    });
+    const data = await res.json().catch(() => null);
+    if (res.ok) {
+      return { ok: true, message: data?.message || "Invitation accepted successfully", data };
+    }
+    return { ok: false, message: data?.detail || "Failed to accept invitation" };
+  } catch (err: any) {
+    return { ok: false, message: err?.message || "Network error while accepting invitation" };
+  }
+}
+
 
 export async function fetchAnalyticsTrends(): Promise<AnalyticsTrends | null> {
   try {

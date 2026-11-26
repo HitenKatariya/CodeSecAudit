@@ -36,7 +36,7 @@ Open http://localhost:5000
 | `GITHUB_CLIENT_ID` | Yes | (empty) | GitHub OAuth App client ID |
 | `GITHUB_CLIENT_SECRET` | Yes | (empty) | GitHub OAuth App client secret |
 | `GITHUB_CALLBACK_URL` | No | auto-derived | OAuth callback URL |
-| `GITHUB_APP_SLUG` | No | `codesecaudit-ai` | GitHub App slug for install button |
+| `GITHUB_APP_SLUG` | No | `codesecurityaudit-app` | GitHub App slug for install button |
 | `SESSION_SECRET` | Yes | (empty) | Flask session signing key |
 | `MONGODB_URI` | No | (empty) | MongoDB Atlas connection string |
 | `MONGODB_DB_NAME` | No | `codereview` | MongoDB database name |
@@ -53,7 +53,7 @@ Open http://localhost:5000
 
 ## GitHub OAuth Setup
 
-1. Go to your GitHub App settings: https://github.com/settings/apps/codesecaudit-ai
+1. Go to your GitHub App settings: https://github.com/settings/apps/codesecurityaudit-app
 2. Under **Identifying and authorizing users**, set:
    - **Callback URL**: `https://codesec-website.onrender.com/auth/github/callback` (production) or `http://localhost:5000/auth/github/callback` (local)
 3. The app's Client ID and Client Secret are used for OAuth
@@ -161,7 +161,7 @@ Set these env vars in Render dashboard (or via API):
 - `GITHUB_CLIENT_ID` — From GitHub App settings
 - `GITHUB_CLIENT_SECRET` — From GitHub App settings
 - `GITHUB_CALLBACK_URL` — `https://codesec-website.onrender.com/auth/github/callback`
-- `GITHUB_APP_SLUG` — `codesecaudit-ai`
+- `GITHUB_APP_SLUG` — `codesecurityaudit-app`
 - `SESSION_SECRET` — Random secret (generate with `python -c "import secrets; print(secrets.token_hex(32))"`)
 - `MONGODB_URI` — MongoDB Atlas connection string
 - `MONGODB_DB_NAME` — `codereview`

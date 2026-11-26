@@ -291,11 +291,50 @@ def calculate_risk_score(findings: list[dict[str, Any]]) -> float:
     return round(min(composite, 10.0), 2)
 
 
-def decide_verdict(risk_score: float) -> str:
-    """Map CVSS risk score to PR gate verdict."""
+def decide_verdict(
+    risk_score: float,
+    findings: Optional[list[dict[str, Any]]] = None,
+    policy: Optional[Any] = None,
+) -> str:
+    """Map CVSS risk score to PR gate verdict, applying tenant security policies."""
+    findings_list = findings or []
+
+    if policy is not None:
+        if isinstance(policy, dict):
+            block_crit = policy.get("block_critical", True)
+            block_sec = policy.get("block_secrets", True)
+            block_hi = policy.get("block_high", True)
+            block_med = policy.get("block_medium", False)
+            min_sec_score = policy.get("min_security_score", 80)
+        else:
+            block_crit = getattr(policy, "block_critical", True)
+            block_sec = getattr(policy, "block_secrets", True)
+            block_hi = getattr(policy, "block_high", True)
+            block_med = getattr(policy, "block_medium", False)
+            min_sec_score = getattr(policy, "min_security_score", 80)
+
+        for f in findings_list:
+            sev = str(f.get("severity", "")).lower()
+            cwe = str(f.get("cwe_id", "")).upper()
+            title = str(f.get("title", "")).lower()
+
+            if block_crit and sev == "critical":
+                return "REQUEST_CHANGES"
+            if block_sec and (cwe == "CWE-798" or "secret" in title or "token" in title or "key" in title):
+                return "REQUEST_CHANGES"
+            if block_hi and sev == "high":
+                return "REQUEST_CHANGES"
+            if block_med and sev == "medium":
+                return "REQUEST_CHANGES"
+
+        if min_sec_score is not None:
+            security_score = round(max(0.0, 100.0 - (risk_score * 10.0)), 1)
+            if security_score < float(min_sec_score):
+                return "REQUEST_CHANGES"
+
     if risk_score >= 7.00:
         return "REQUEST_CHANGES"
-    if risk_score >= 4.00:
+    if risk_score >= 4.00 or any(str(f.get("severity", "")).lower() == "medium" for f in findings_list):
         return "WARNING"
     return "APPROVE"
 

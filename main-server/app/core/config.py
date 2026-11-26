@@ -95,9 +95,9 @@ class Settings(BaseSettings):
         if isinstance(value, str) and value:
             clean = value.strip().lower()
             if clean in {"codesec-main", "codesec-main:10000", "http://codesec-main", "http://codesec-main:10000"}:
-                return "https://codesec-main.onrender.com"
+                return "https://codesec-main-e3dq.onrender.com"
             if clean in {"codesec-rag", "codesec-rag:10000", "http://codesec-rag", "http://codesec-rag:10000"}:
-                return "https://codesec-rag.onrender.com"
+                return "https://codesec-rag-xp4b.onrender.com"
             if not value.startswith(("http://", "https://")):
                 return f"http://{value}"
         return value
@@ -110,7 +110,7 @@ class Settings(BaseSettings):
             return value
         clean = value.strip().lower()
         if clean in {"codesec-client", "codesec-client:10000", "http://codesec-client", "http://codesec-client:10000"}:
-            return "https://codesec-client.onrender.com"
+            return "https://codesec-client-v6a6.onrender.com"
         if value.startswith(("http://", "https://")):
             return value
         host = value.split("/", 1)[0].split(":", 1)[0]

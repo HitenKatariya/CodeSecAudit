@@ -13,7 +13,7 @@ from app.core.config import get_settings
 from app.core.redis import get_redis_service
 from app.db.models.audit import AuditEvent, UsageEvent
 from app.db.models.github import GitHubInstallation, Repository, WebhookDelivery
-from app.db.models.organization import Membership, Organization
+from app.db.models.organization import Membership, Organization, OrganizationInvitation
 from app.db.models.review import Finding, Review, ReviewJob
 from app.db.models.user import User
 from app.db.session import get_db
@@ -230,6 +230,7 @@ async def login(
     db: AsyncSession = Depends(get_db),
 ):
     """Direct/workspace user login that ensures user, organization, membership and audit logging in Postgres."""
+    settings = get_settings()
     username = (payload.username or "").strip()
     if not username:
         raise HTTPException(status_code=400, detail="Username is required")
@@ -454,20 +455,35 @@ async def delete_account(
     )
     await db.execute(delete(UsageEvent).where(UsageEvent.organization_id == org_id))
 
-    # 7. Delete Memberships
+    # 7. Delete Organization Invitations to prevent FK violation
+    await db.execute(
+        delete(OrganizationInvitation).where(
+            (OrganizationInvitation.organization_id == org_id) | (OrganizationInvitation.invited_by_user_id == user_id)
+        )
+    )
+
+    # 8. Delete Memberships
     await db.execute(
         delete(Membership).where((Membership.user_id == user_id) | (Membership.organization_id == org_id))
     )
 
-    # 8. Delete Organization
+    # 9. Delete Organization
     await db.execute(delete(Organization).where(Organization.id == org_id))
 
-    # 9. Delete User
+    # 10. Delete User
     await db.execute(delete(User).where(User.id == user_id))
 
     await db.commit()
 
-    # 10. Destroy Session in Redis and clear cookie
+    # 11. Purge policy in redis if present
+    try:
+        settings = get_settings()
+        redis_service = get_redis_service(settings.redis_url)
+        await redis_service.delete(f"org_policy:{org_id}")
+    except Exception:
+        pass
+
+    # 12. Destroy Session in Redis and clear cookie
     await destroy_user_session(response, codesec_session)
 
     return {

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { PullRequest } from "@/types";
 import { fetchPullRequestById } from "@/lib/api";
-import { GateBadge } from "@/components/ui/Badge";
+import { GateBadge, StatusDot } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { MetricCard } from "@/components/ui/MetricCard";
@@ -75,7 +75,7 @@ export default function PRDetailPage() {
             pr.pr_url ||
             (pr.repository.includes("/")
               ? `https://github.com/${pr.repository}/pull/${pr.pr_number}`
-              : `https://github.com/HitenKatariya/CodeSecurityAuditAgent/pull/${pr.pr_number}`)
+              : `https://github.com/HitenKatariya/CodeSecAudit/pull/${pr.pr_number}`)
           }
           target="_blank"
           rel="noreferrer"
@@ -117,14 +117,14 @@ export default function PRDetailPage() {
         <div className="metric-card">
           <span className="metric-card-label">Findings Summary</span>
           <div className="flex items-center gap-2 text-xs font-mono mt-1">
-            <span style={{ color: "var(--crit-color)" }} className="font-bold">
-              🔴 {pr.findings_summary.critical} Crit
+            <span style={{ color: "var(--crit-color)" }} className="font-bold flex items-center">
+              <StatusDot color="var(--crit-color)" /> {pr.findings_summary.critical} Crit
             </span>
-            <span style={{ color: "var(--high-color)" }} className="font-bold">
-              🟠 {pr.findings_summary.high} High
+            <span style={{ color: "var(--high-color)" }} className="font-bold flex items-center">
+              <StatusDot color="var(--high-color)" /> {pr.findings_summary.high} High
             </span>
-            <span style={{ color: "var(--med-color)" }} className="font-bold">
-              🟡 {pr.findings_summary.medium} Med
+            <span style={{ color: "var(--med-color)" }} className="font-bold flex items-center">
+              <StatusDot color="var(--med-color)" /> {pr.findings_summary.medium} Med
             </span>
           </div>
           <span className="metric-card-trend text-dim">

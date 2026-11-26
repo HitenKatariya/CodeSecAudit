@@ -22,7 +22,7 @@ from app.indexing.corpus import index_chunks, load_corpus_from_url  # noqa: E402
 from app.retrieval.qdrant_client import QdrantStore  # noqa: E402
 
 DEFAULT_CORPUS_URL = (
-    "https://huggingface.co/datasets/HitenKatariya/CodeSecAudit-RAG/"
+    "https://huggingface.co/datasets/hitenvk22/CodeSecAudit-RAG-Shuffled/"
     "resolve/main/rag/rag_corpus.jsonl.gz"
 )
 

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { PullRequest } from "@/types";
 import { fetchPullRequests } from "@/lib/api";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { GateBadge } from "@/components/ui/Badge";
+import { GateBadge, StatusDot } from "@/components/ui/Badge";
 import { DataTable, Column } from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/Button";
 
@@ -81,11 +81,11 @@ export default function PullRequestsPage() {
       header: "Findings",
       render: (pr) => (
         <div className="flex items-center gap-2 text-xs font-mono">
-          {pr.findings_summary.critical > 0 && <span style={{ color: "var(--crit-color)" }} className="font-bold">🔴 {pr.findings_summary.critical}</span>}
-          {pr.findings_summary.high > 0 && <span style={{ color: "var(--high-color)" }} className="font-semibold">🟠 {pr.findings_summary.high}</span>}
-          {pr.findings_summary.medium > 0 && <span style={{ color: "var(--med-color)" }}>🟡 {pr.findings_summary.medium}</span>}
+          {pr.findings_summary.critical > 0 && <span style={{ color: "var(--crit-color)" }} className="font-bold flex items-center"><StatusDot color="var(--crit-color)" /> {pr.findings_summary.critical}</span>}
+          {pr.findings_summary.high > 0 && <span style={{ color: "var(--high-color)" }} className="font-semibold flex items-center"><StatusDot color="var(--high-color)" /> {pr.findings_summary.high}</span>}
+          {pr.findings_summary.medium > 0 && <span style={{ color: "var(--med-color)" }} className="flex items-center"><StatusDot color="var(--med-color)" /> {pr.findings_summary.medium}</span>}
           {pr.findings_summary.critical === 0 && pr.findings_summary.high === 0 && pr.findings_summary.medium === 0 && (
-            <span style={{ color: "var(--pass-color)" }}>🟢 Clean</span>
+            <span style={{ color: "var(--pass-color)" }} className="flex items-center"><StatusDot color="var(--pass-color)" /> Clean</span>
           )}
         </div>
       ),

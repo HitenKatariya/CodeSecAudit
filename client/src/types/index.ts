@@ -92,11 +92,20 @@ export interface TeamMember {
   id: string;
   name: string;
   email: string;
-  role: "Admin" | "Security Lead" | "Developer" | "Viewer";
+  role: string;
   prs_reviewed: number;
   findings_resolved: number;
   last_active: string;
   avatar_url?: string;
+}
+
+export interface TeamInvitation {
+  id: string;
+  email: string;
+  role: string;
+  invited_by: string;
+  created_at: string;
+  invite_link: string;
 }
 
 export interface ReportSummary {

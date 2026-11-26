@@ -17,6 +17,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json next.config.js tsconfig.json ./
 COPY src ./src
+COPY public ./public
 RUN npm run build \
     && find /app/.next/standalone /app/.next/static -type f \( -name '*.map' -o -name '*.d.ts' \) -delete \
     && if [ -d /app/.next/standalone/node_modules ]; then \
@@ -42,6 +43,7 @@ COPY --from=builder /usr/local/bin/node /usr/local/bin/node
 # Standalone output contains server.js plus only the traced runtime modules.
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
 USER nextjs
 

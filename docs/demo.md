@@ -87,10 +87,10 @@ Verifies: health endpoint → review API → review detail → stats → Streaml
 
 ```bash
 # Health
-curl https://HitenKatariya-codereview-agent.hf.space/health
+curl https://codesec-rag-xp4b.onrender.com/health
 
 # Search
-curl -X POST https://HitenKatariya-codereview-agent.hf.space/rag/search \
+curl -X POST https://codesec-rag-xp4b.onrender.com/rag/search \
   -H "Content-Type: application/json" \
   -d '{"query": "SQL injection prevention", "top_k": 2}'
 ```
@@ -99,7 +99,7 @@ curl -X POST https://HitenKatariya-codereview-agent.hf.space/rag/search \
 
 Explore the dataset and prototype pipeline on Kaggle:
 
-https://www.kaggle.com/code/omchoksi04/codereview
+https://www.kaggle.com/code/hitenkatariya/codesecaudit-rag
 
 ## Screenshot Checklist
 

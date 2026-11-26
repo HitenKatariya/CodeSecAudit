@@ -1,10 +1,12 @@
 """Background review job processor worker."""
 
 import asyncio
+import json
 import logging
 from sqlalchemy import select
 from app.core.config import get_settings
 from app.core.logging import setup_logger
+from app.core.redis import get_redis_service
 from app.db.models.audit import AuditEvent
 from app.db.models.review import Finding, Review, ReviewJob
 from app.db.session import get_session_factory
@@ -78,8 +80,18 @@ async def process_single_job(job_data: dict) -> None:
                     findings_raw.append(f)
                     existing_keys.add(key)
 
+        policy = None
+        try:
+            redis_service = get_redis_service(settings.redis_url)
+            redis_client = await redis_service.get_async()
+            raw_policy = await redis_client.get(f"org_policy:{org_id}")
+            if raw_policy:
+                policy = json.loads(raw_policy)
+        except Exception as e:
+            logger.warning(f"Could not load policy for org {org_id}: {e}")
+
         risk_score = calculate_risk_score(findings_raw)
-        verdict = decide_verdict(risk_score)
+        verdict = decide_verdict(risk_score, findings=findings_raw, policy=policy)
 
         # 3. Enrich with RAG guidance
         findings_to_insert = []
@@ -157,7 +169,8 @@ async def process_single_job(job_data: dict) -> None:
         # PR - no mail-sending code needed on our side.
         if repo_full_name and installation_id:
             try:
-                comment_body = format_pr_comment(verdict, risk_score, findings_to_insert, commit_sha)
+                diff_text = code_content if is_diff else ""
+                comment_body = format_pr_comment(verdict, risk_score, findings_to_insert, commit_sha, diff_text=diff_text)
                 await post_pr_comment(repo_full_name, pr_number, installation_id, comment_body)
             except Exception as e:
                 logger.warning(f"Failed to post PR comment for job {job_id}: {e}")

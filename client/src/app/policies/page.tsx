@@ -1,19 +1,21 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { SecurityPolicy } from "@/types";
-import { fetchSecurityPolicy, saveSecurityPolicy } from "@/lib/api";
+import { SecurityPolicy, PullRequest } from "@/types";
+import { fetchSecurityPolicy, saveSecurityPolicy, fetchPullRequests } from "@/lib/api";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { PolicyForm } from "@/components/policies/PolicyForm";
 import { ShieldCheckIcon } from "@/components/ui/Icons";
 
 export default function PoliciesPage() {
   const [policy, setPolicy] = useState<SecurityPolicy | null>(null);
+  const [prs, setPrs] = useState<PullRequest[]>([]);
   const [saving, setSaving] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
     fetchSecurityPolicy().then((p) => setPolicy(p));
+    fetchPullRequests().then(setPrs);
   }, []);
 
   const handleSave = async () => {
@@ -101,6 +103,7 @@ export default function PoliciesPage() {
         onChange={setPolicy}
         onSave={handleSave}
         saving={saving}
+        recentPrs={prs}
       />
     </div>
   );

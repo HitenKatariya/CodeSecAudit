@@ -56,7 +56,7 @@ To trigger re-indexing of the OWASP guidance corpus:
 curl -X POST http://localhost:8010/v1/index \
   -H "X-Internal-RAG-Token: dev_rag_service_token_secret" \
   -H "Content-Type: application/json" \
-  -d '{"corpus_url": "https://huggingface.co/datasets/HitenKatariya/CodeSecAudit-RAG/resolve/main/rag/rag_corpus.jsonl.gz"}'
+  -d '{"corpus_url": "https://huggingface.co/datasets/hitenvk22/CodeSecAudit-RAG-Shuffled/resolve/main/rag/rag_corpus.jsonl.gz"}'
 ```
 Check index status:
 ```bash

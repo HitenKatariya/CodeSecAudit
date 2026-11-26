@@ -70,6 +70,9 @@ services:
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-3-small}
       EMBEDDING_DIM: ${EMBEDDING_DIM:-1536}
       EMBEDDING_BATCH_SIZE: ${EMBEDDING_BATCH_SIZE:-64}
+    command: ["sh", "-c", "exec python -m uvicorn app.main:app --host 0.0.0.0 --port 8010 --reload"]
+    volumes:
+      - ./rag-server/app:/app/app
     depends_on:
       qdrant:
         condition: service_healthy
@@ -111,8 +114,11 @@ services:
       # is stored on the client origin (the browser's origin).
       OAUTH_REDIRECT_URI: ${OAUTH_REDIRECT_URI:-http://localhost:3000/api/auth/github/callback}
       RUN_WORKER_INLINE: "false"
+    command: ["sh", "-c", "alembic upgrade head && exec python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"]
     volumes:
       - ./main-server/app:/app/app
+      - ./main-server/alembic.ini:/app/alembic.ini
+      - ./main-server/migrations:/app/migrations
     depends_on:
       postgres:
         condition: service_healthy
@@ -172,15 +178,23 @@ services:
   client:
     build:
       context: ./client
-      dockerfile: Dockerfile
-    image: codesec-client:local
+      dockerfile: Dockerfile.dev
+    image: codesec-client:dev
     container_name: codesec-client
     restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
-      NODE_ENV: production
+      NODE_ENV: development
       MAIN_SERVER_URL: http://main-server:8000
+      WATCHPACK_POLLING: "true"
+    volumes:
+      - ./client/src:/app/src
+      - ./client/public:/app/public
+      - ./client/next.config.js:/app/next.config.js
+      - ./client/tsconfig.json:/app/tsconfig.json
+      - /app/node_modules
+      - /app/.next
     depends_on:
       main-server:
         condition: service_healthy

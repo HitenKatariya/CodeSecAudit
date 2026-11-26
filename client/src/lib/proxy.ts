@@ -10,7 +10,7 @@ function normalizeBase(value: string | undefined, fallback: string): string {
     raw === "http://codesec-main:10000" ||
     raw === "http://codesec-main"
   ) {
-    return "https://codesec-main.onrender.com";
+    return "https://codesec-main-e3dq.onrender.com";
   }
   if (/^https?:\/\//i.test(raw)) {
     return raw.replace(/\/+$/, "");
@@ -30,7 +30,7 @@ function normalizeBase(value: string | undefined, fallback: string): string {
 export function mainServerBase(): string {
   const fallback =
     process.env.NODE_ENV === "production"
-      ? "https://codesec-main.onrender.com"
+      ? "https://codesec-main-e3dq.onrender.com"
       : "http://main-server:8000";
   return normalizeBase(process.env.MAIN_SERVER_URL, fallback);
 }

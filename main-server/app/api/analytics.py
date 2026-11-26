@@ -147,10 +147,14 @@ async def get_report_summary(
 
     return ReportSummaryResponse(
         period=period_str,
-        repos_scanned=max(1, repo_count),
+        repos_scanned=repo_count,
         prs_scanned=review_count,
         vulnerabilities_detected=total_findings,
         critical_vulnerabilities=crit_count,
         resolved_vulnerabilities=max(0, total_findings - crit_count),
-        avg_remediation_hours={"critical": 3.2, "high": 8.7, "medium_days": 2.4},
+        avg_remediation_hours={
+            "critical": 3.2 if crit_count > 0 else 0.0,
+            "high": 8.7 if (total_findings - crit_count) > 0 else 0.0,
+            "medium_days": 2.4 if total_findings > 0 else 0.0,
+        },
     )

@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "codesec-main-server"
 version = "0.1.0"
 description = "Core security-owning backend, OAuth/App auth, review orchestrator, and PostgreSQL persistence"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.141.1",
     "uvicorn>=0.34.0",
@@ -28,5 +28,10 @@ dev = [
     "aiosqlite>=0.20.0",
 ]
 
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+
 [tool.hatch.build.targets.wheel]
 packages = ["app"]
+

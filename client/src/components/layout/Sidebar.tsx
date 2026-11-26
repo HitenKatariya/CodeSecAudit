@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import {
   ShieldIcon,
   GitPullRequestIcon,
-  RepoIcon,
   AlertTriangleIcon,
   TrendingUpIcon,
   PolicyIcon,
@@ -15,6 +14,7 @@ import {
   PlugIcon,
   SettingsIcon,
   TerminalIcon,
+  CloseIcon,
 } from "../ui/Icons";
 import { fetchMe } from "@/lib/api";
 import { UserProfile } from "@/types";
@@ -33,36 +33,30 @@ const NAV_GROUPS: { group: string; items: NavLinkItem[] }[] = [
     ],
   },
   {
-    group: "DEVELOPMENT",
-    items: [
-      { name: "Pull Requests", href: "/pull-requests", icon: <GitPullRequestIcon size={16} /> },
-      { name: "Repositories", href: "/repositories", icon: <RepoIcon size={16} /> },
-    ],
-  },
-  {
     group: "SECURITY",
     items: [
+      { name: "Pull Requests", href: "/pull-requests", icon: <GitPullRequestIcon size={16} /> },
       { name: "Findings", href: "/findings", icon: <AlertTriangleIcon size={16} /> },
-      { name: "Security Trends", href: "/trends", icon: <TrendingUpIcon size={16} /> },
+      { name: "Trends", href: "/trends", icon: <TrendingUpIcon size={16} /> },
     ],
   },
   {
-    group: "MANAGEMENT",
+    group: "COMPLIANCE",
     items: [
-      { name: "Policies", href: "/policies", icon: <PolicyIcon size={16} /> },
       { name: "Reports", href: "/reports", icon: <FileTextIcon size={16} /> },
-      { name: "Team", href: "/team", icon: <UsersIcon size={16} /> },
+      { name: "Policies", href: "/policies", icon: <PolicyIcon size={16} /> },
     ],
   },
   {
-    group: "SYSTEM",
+    group: "ORGANIZATION",
     items: [
-      { name: "Integrations", href: "/integrations", icon: <PlugIcon size={16} /> },
+      { name: "Team", href: "/team", icon: <UsersIcon size={16} /> },
       { name: "Settings", href: "/settings", icon: <SettingsIcon size={16} /> },
-      { name: "Admin Logs", href: "/admin/logs", icon: <TerminalIcon size={16} /> },
+      { name: "Integrations", href: "/integrations", icon: <PlugIcon size={16} /> },
     ],
   },
 ];
+
 
 interface SidebarProps {
   user?: UserProfile | null;
@@ -89,7 +83,9 @@ export function Sidebar({ user: propUser, onSignOut, isOpen, onClose }: SidebarP
     <aside className={`app-sidebar ${isOpen ? "mobile-open" : ""}`}>
       <div className="sidebar-header" style={{ justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-          <span className="logo-badge">🛡️</span>
+          <span className="logo-badge" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+            <ShieldIcon size={18} />
+          </span>
           <div>
             <div className="logo-text">CodeSecAudit AI</div>
             <div style={{ fontSize: "0.75rem", color: "var(--text-dim)", fontFamily: "var(--font-mono)" }}>PR Security Gate</div>
@@ -101,7 +97,7 @@ export function Sidebar({ user: propUser, onSignOut, isOpen, onClose }: SidebarP
             className="mobile-close-btn"
             aria-label="Close sidebar"
           >
-            ✕
+            <CloseIcon size={14} />
           </button>
         )}
       </div>
@@ -139,7 +135,7 @@ export function Sidebar({ user: propUser, onSignOut, isOpen, onClose }: SidebarP
 
         <div style={{ display: "flex", alignItems: "center", gap: "0.65rem", paddingTop: "0.5rem", borderTop: "1px solid var(--border-subtle)" }}>
           <div style={{ width: "28px", height: "28px", borderRadius: "50%", background: "var(--bg-surface-hover)", border: "1px solid var(--border-light)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.8rem", color: "var(--text-main)" }}>
-            🛡️
+            <ShieldIcon size={14} />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: "0.8rem", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "var(--text-main)" }}>{orgName}</div>
