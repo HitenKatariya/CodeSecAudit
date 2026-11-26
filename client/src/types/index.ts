@@ -1,5 +1,5 @@
 export type Severity = "critical" | "high" | "medium" | "low";
-export type GateStatus = "BLOCKED" | "PASSED" | "IN_REVIEW";
+export type GateStatus = "BLOCKED" | "WARNING" | "PASSED" | "IN_REVIEW";
 export type FindingStatus = "open" | "resolved" | "ignored";
 
 export interface UserProfile {

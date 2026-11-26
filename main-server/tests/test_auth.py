@@ -63,6 +63,8 @@ def test_github_callback_app_install_success(monkeypatch):
     mock_result = MagicMock()
     mock_result.scalar_one_or_none.return_value = None
     mock_result.first.return_value = None
+    mock_result.scalars.return_value.first.return_value = None
+    mock_result.scalars.return_value.all.return_value = []
     mock_db.execute.return_value = mock_result
 
     async def override_get_db():

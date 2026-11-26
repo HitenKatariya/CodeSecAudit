@@ -136,7 +136,7 @@ export default function PullRequestsPage() {
       <div className="filter-bar flex-between">
         <div className="flex items-center gap-2.5 flex-wrap">
           <div className="flex items-center gap-1">
-            {["ALL", "BLOCKED", "PASSED"].map((g) => (
+            {["ALL", "BLOCKED", "WARNING", "PASSED"].map((g) => (
               <Button key={g} variant={filterGate === g ? "primary" : "secondary"} size="sm" onClick={() => setFilterGate(g)}>
                 {g}
               </Button>

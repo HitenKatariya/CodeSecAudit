@@ -13,6 +13,7 @@ from app.db.models.organization import Organization
 from app.db.models.review import ReviewJob
 from app.db.session import get_db
 from app.jobs.queue import enqueue_review_job
+from app.security.org_sync import find_member_org_for_username, resolve_org_for_github_account
 from app.security.signatures import verify_github_signature
 
 logger = logging.getLogger("main_server")
@@ -69,24 +70,14 @@ async def github_webhook(
     pr_number = pr_data.get("number", 0)
     commit_sha = (pr_data.get("head") or {}).get("sha", "")
 
-    # Resolve organization from installation
+    account_data = install_data.get("account") or repo_data.get("owner") or {}
+    account_login = (account_data.get("login") or "").strip()
+
+    # Resolve organization from installation without crossing tenant boundaries
     inst_stmt = select(GitHubInstallation).where(GitHubInstallation.installation_id == gh_install_id)
     inst = (await db.execute(inst_stmt)).scalar_one_or_none()
     if not inst:
-        account_data = install_data.get("account") or repo_data.get("owner") or {}
-        account_login = account_data.get("login", "")
-        # Match organization or fallback to first organization in database
-        org = None
-        if account_login:
-            org_stmt = select(Organization).where(Organization.slug.ilike(f"{account_login.lower()}%"))
-            org = (await db.execute(org_stmt)).scalars().first()
-        if not org:
-            org = (await db.execute(select(Organization))).scalars().first()
-        if not org:
-            org = Organization(name=f"{account_login or 'Default'}'s Org", slug=f"{(account_login or 'default').lower()}-org")
-            db.add(org)
-            await db.flush()
-
+        org = await resolve_org_for_github_account(db, account_login)
         inst = GitHubInstallation(
             installation_id=gh_install_id,
             organization_id=org.id,
@@ -96,7 +87,12 @@ async def github_webhook(
         db.add(inst)
         await db.flush()
         logger.info(f"Auto-linked installation {gh_install_id} to organization {org.id}")
-
+    elif account_login or inst.account_login:
+        # If the installation previously sat in an orphan org, re-home to the real user's org
+        member_org = await find_member_org_for_username(db, account_login or inst.account_login)
+        if member_org and inst.organization_id != member_org.id:
+            inst.organization_id = member_org.id
+            await db.flush()
 
     # Resolve or register repository
     repo_stmt = select(Repository).where(Repository.github_repo_id == gh_repo_id)
@@ -109,6 +105,9 @@ async def github_webhook(
             is_private=repo_data.get("private", False),
         )
         db.add(repo)
+        await db.flush()
+    elif repo.organization_id != inst.organization_id:
+        repo.organization_id = inst.organization_id
         await db.flush()
 
     # Create ReviewJob

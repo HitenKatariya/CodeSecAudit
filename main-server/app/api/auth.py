@@ -32,6 +32,7 @@ from app.security.sessions import (
     create_user_session,
     destroy_user_session,
 )
+from app.security.org_sync import reconcile_user_organization, resolve_org_for_github_account
 from app.security.tenant import TenantContext, get_tenant_context
 
 logger = logging.getLogger("main_server")
@@ -136,19 +137,20 @@ async def github_auth_callback(
             if avatar:
                 user.avatar_url = avatar
 
-        # Ensure personal organization in Postgres
+        # Ensure personal organization in Postgres, reusing any webhook-created org for username
         mem_stmt = select(Membership, Organization).join(Organization).where(Membership.user_id == user.id)
         mem_row = (await db.execute(mem_stmt)).first()
 
         if not mem_row:
-            org = Organization(name=f"{username}'s Org", slug=f"{username.lower()}-personal")
-            db.add(org)
-            await db.flush()
+            org = await resolve_org_for_github_account(db, username)
             membership = Membership(organization_id=org.id, user_id=user.id, role="admin")
             db.add(membership)
+            await db.flush()
             org_id = org.id
         else:
             org_id = mem_row[1].id
+
+        await reconcile_user_organization(db, user, org_id)
 
     # 5. If installation_id is present, link GitHubInstallation and sync repositories
     if installation_id and org_id and user:
@@ -387,6 +389,11 @@ async def get_me(
     tenant: TenantContext = Depends(get_tenant_context),
     db: AsyncSession = Depends(get_db),
 ):
+    try:
+        if await reconcile_user_organization(db, tenant.user, tenant.organization.id):
+            await db.commit()
+    except Exception:
+        await db.rollback()
     settings = get_settings()
     inst_stmt = select(GitHubInstallation).where(GitHubInstallation.organization_id == tenant.organization.id)
     has_install = (await db.execute(inst_stmt)).first() is not None

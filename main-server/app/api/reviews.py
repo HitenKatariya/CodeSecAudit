@@ -8,6 +8,7 @@ from app.db.models.github import Repository
 from app.db.models.review import Finding, Review, ReviewJob
 from app.db.session import get_db
 from app.jobs.queue import enqueue_review_job
+from app.security.org_sync import reconcile_user_organization
 from app.security.tenant import TenantContext, get_tenant_context
 
 router = APIRouter(prefix="/v1/reviews", tags=["Reviews"])
@@ -20,6 +21,11 @@ async def list_reviews(
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
 ):
+    try:
+        if await reconcile_user_organization(db, tenant.user, tenant.organization.id):
+            await db.commit()
+    except Exception:
+        await db.rollback()
     stmt = (
         select(Review)
         .where(Review.organization_id == tenant.organization.id)

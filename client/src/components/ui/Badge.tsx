@@ -88,6 +88,13 @@ export function GateBadge({
       </Badge>
     );
   }
+  if (norm === "WARNING") {
+    return (
+      <Badge variant="warning" icon={<StatusDot color="var(--med-color, #eab308)" />}>
+        {text || "WARNING"}
+      </Badge>
+    );
+  }
   return (
     <Badge variant="in_review" icon={<StatusDot color="var(--text-dim, #94a3b8)" />}>
       {text || "IN REVIEW"}
