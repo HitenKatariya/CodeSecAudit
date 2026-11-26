@@ -61,6 +61,54 @@ def test_parse_comment_falls_back_to_head_sha() -> None:
     assert result["verdict"] == "APPROVE"
 
 
+def test_import_keeps_github_verdict_even_with_strict_org_policy() -> None:
+    """Historical imports must match the bot comment; policies apply on save, not import."""
+    import asyncio
+    import uuid
+    from sqlalchemy import select
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+    import app.reviews.github_sync as gh_sync
+    from app.db.base import Base
+    from app.db.models.github import Repository
+    from app.db.models.organization import Organization
+    from app.db.models.review import Review
+
+    body = _payload_comment("WARNING", 6.5, [{
+        "cwe_id": "CWE-352", "severity": "medium", "title": "CSRF Protection Disabled",
+        "file_path": "app/api.py", "line_number": 10, "code_snippet": "@csrf_exempt",
+    }])
+
+    async def fake_fetch(repo_name, headers):
+        return [(
+            {"number": 20, "title": "feat: notification preferences", "head": {"sha": "abc123def456"}},
+            {"user": {"login": "codesecurityaudit-app"}, "body": body, "created_at": "2026-11-26T18:00:00Z"},
+        )]
+
+    original = gh_sync._fetch_pr_bot_comments
+    gh_sync._fetch_pr_bot_comments = fake_fetch
+
+    async def run():
+        engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        factory = async_sessionmaker(bind=engine, expire_on_commit=False)
+        async with factory() as db:
+            org = Organization(id=str(uuid.uuid4()), name="Strict Org", slug="strict-org", policy_json='{"block_medium": true, "min_security_score": 80}')
+            repo = Repository(id=str(uuid.uuid4()), organization_id=org.id, github_repo_id="r2", full_name="acme/app", is_private=False)
+            db.add_all([org, repo])
+            await db.commit()
+            await gh_sync.sync_repo_pr_reviews(db, org.id, repo)
+            rev = (await db.execute(select(Review).where(Review.repository_id == repo.id))).scalar_one()
+            assert rev.verdict == "WARNING"
+            assert rev.risk_score == 6.5
+        await engine.dispose()
+
+    try:
+        asyncio.run(run())
+    finally:
+        gh_sync._fetch_pr_bot_comments = original
+
+
 def test_parse_markdown_verdict_header_ignores_body_words() -> None:
     body = (
         "> **Verdict:** ✅ **APPROVE** | **CVSS Security Risk Score:** `0.00 / 10.0` "

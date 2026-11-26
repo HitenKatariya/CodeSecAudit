@@ -19,7 +19,6 @@ from app.db.models.organization import Membership, Organization
 from app.db.models.review import Finding, Review, ReviewJob
 from app.db.models.user import User
 from app.reviews.comment_parser import parse_bot_comment
-from app.reviews.risk import calculate_risk_score, decide_verdict, filter_findings_by_policy
 from app.security.github_app import (
     GITHUB_API_BASE,
     get_installation_token,
@@ -58,7 +57,6 @@ async def sync_repo_pr_reviews(
     repo: Repository,
     installation_id: Optional[str] = None,
     github_token: Optional[str] = None,
-    policy: Optional[dict[str, Any]] = None,
 ) -> dict[str, int]:
     """Fetch PRs + CodeSecAudit bot comments for repo and upsert missing reviews into PostgreSQL."""
     token = github_token or os.getenv("GITHUB_TOKEN") or None
@@ -81,13 +79,14 @@ async def sync_repo_pr_reviews(
         pr_num = int(pr.get("number") or 0)
         pr_title = str(pr.get("title") or f"PR #{pr_num}").strip()[:255]
         head_sha = str((pr.get("head") or {}).get("sha") or "HEAD")
+        # Import exactly what CodeSecAudit posted on GitHub. Tenant thresholds are
+        # applied dynamically by the Policies API when policy is saved, not here.
         parsed = parse_bot_comment(bot_comment.get("body") or "", head_sha)
         all_findings = parsed["findings"]
-        active = filter_findings_by_policy(all_findings, policy) if policy else all_findings
-        risk_val = calculate_risk_score(active) if (policy and all_findings) else parsed["risk_score"]
-        verdict = decide_verdict(risk_val, findings=active, policy=policy) if policy else parsed["verdict"]
+        risk_val = parsed["risk_score"]
+        verdict = parsed["verdict"]
         short_sha = (parsed["commit_sha"] or head_sha)[:12]
-        summary = f"{pr_title} — Found {len(active)} issue(s). Risk score: {risk_val}/10.0. Verdict: {verdict}." if active else f"{pr_title} — No security issues detected."
+        summary = f"{pr_title} — Found {len(all_findings)} issue(s). Risk score: {risk_val}/10.0. Verdict: {verdict}." if all_findings else f"{pr_title} — No security issues detected."
 
         existing = existing_by_pr_sha.get((pr_num, short_sha)) or existing_by_pr_sha.get((pr_num, head_sha[:12]))
         if existing:
@@ -148,8 +147,6 @@ async def discover_org_installations(db: AsyncSession, org_id: str, hint_logins:
 
 async def sync_org_github_reviews(db: AsyncSession, org_id: str, github_token: Optional[str] = None) -> dict[str, Any]:
     """Discover installations + repositories and sync all CodeSecAudit GitHub PR reviews."""
-    org = (await db.execute(select(Organization).where(Organization.id == org_id))).scalar_one_or_none()
-    policy = json.loads(org.policy_json) if (org and getattr(org, "policy_json", None)) else None
     insts = await discover_org_installations(db, org_id)
     repo_install_map: dict[str, str] = {}
     for inst in insts:
@@ -164,7 +161,7 @@ async def sync_org_github_reviews(db: AsyncSession, org_id: str, github_token: O
     fallback_inst = insts[0].installation_id if insts else None
     total_synced, total_skipped = 0, 0
     for repo in repos:
-        res = await sync_repo_pr_reviews(db, org_id, repo, installation_id=repo_install_map.get(repo.github_repo_id, fallback_inst), github_token=github_token, policy=policy)
+        res = await sync_repo_pr_reviews(db, org_id, repo, installation_id=repo_install_map.get(repo.github_repo_id, fallback_inst), github_token=github_token)
         total_synced += res["synced"]
         total_skipped += res["skipped"]
     await db.commit()
