@@ -2,6 +2,7 @@
 
 import os
 from functools import lru_cache
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -72,13 +73,39 @@ class Settings(BaseSettings):
     @field_validator("database_url", mode="before")
     @classmethod
     def _normalize_database_url(cls, value: str) -> str:
-        """Render hands out postgres:// or postgresql:// URLs; SQLAlchemy needs +asyncpg."""
-        if isinstance(value, str):
-            if value.startswith("postgres://"):
-                return "postgresql+asyncpg://" + value[len("postgres://") :]
-            if value.startswith("postgresql://"):
-                return "postgresql+asyncpg://" + value[len("postgresql://") :]
-        return value
+        """Normalize Postgres URLs for asyncpg (scheme + Neon sslmode/channel_binding)."""
+        if not isinstance(value, str) or not value:
+            return value
+        normalized = value.strip()
+        if normalized.startswith("postgres://"):
+            normalized = "postgresql+asyncpg://" + normalized[len("postgres://") :]
+        elif normalized.startswith("postgresql://"):
+            normalized = "postgresql+asyncpg://" + normalized[len("postgresql://") :]
+
+        parts = urlsplit(normalized)
+        if not parts.query:
+            return normalized
+
+        rewritten: list[tuple[str, str]] = []
+        has_ssl = False
+        for k, v in parse_qsl(parts.query, keep_blank_values=True):
+            key_lower = k.lower()
+            # Neon appends channel_binding/sslmode for libpq; asyncpg rejects both.
+            if key_lower == "channel_binding":
+                continue
+            if key_lower == "sslmode":
+                if not has_ssl:
+                    ssl_val = "require" if v.lower() in {"verify-full", "verify-ca"} else v
+                    rewritten.append(("ssl", ssl_val))
+                    has_ssl = True
+                continue
+            if key_lower == "ssl":
+                has_ssl = True
+                rewritten.append(("ssl", "require" if v.lower() in {"true", "1"} else v))
+                continue
+            rewritten.append((k, v))
+
+        return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(rewritten), parts.fragment))
 
     @property
     def effective_github_app_slug(self) -> str:

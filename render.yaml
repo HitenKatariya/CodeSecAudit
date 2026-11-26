@@ -35,10 +35,9 @@ services:
         value: "3.12.8"
       - key: APP_ENV
         value: production
+      # External PostgreSQL (e.g. Neon PostgreSQL 16) configured per environment
       - key: DATABASE_URL
-        fromDatabase:
-          name: codesec-postgres
-          property: connectionString
+        sync: false
       - key: REDIS_URL
         fromService:
           name: codesec-redis
@@ -164,9 +163,5 @@ services:
     region: oregon
     ipAllowList: []
 
-databases:
-  - name: codesec-postgres
-    plan: free
-    databaseName: codesec
-    user: codesec
-    postgresMajorVersion: "16"
+# PostgreSQL 16 is provisioned externally (e.g. Neon PostgreSQL) and supplied
+# via DATABASE_URL on codesec-main so free-tier DBs do not expire after 30 days.
