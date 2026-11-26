@@ -50,6 +50,7 @@ FILE_LINE_OVERRIDES: dict[str, int] = {
     "main-server/app/api/auth.py": 700,
     "main-server/app/api/team.py": 500,
     "main-server/app/reviews/risk.py": 500,
+    "main-server/app/reviews/github_sync.py": 250,
     "main-server/app/reviews/report_formatter.py": 500,
     "main-server/app/reviews/engine.py": 500,
     "main-server/app/jobs/worker.py": 300,

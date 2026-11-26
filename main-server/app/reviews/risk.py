@@ -335,6 +335,37 @@ def calculate_risk_score(findings: list[dict[str, Any]]) -> float:
     return round(min(composite, 10.0), 2)
 
 
+def filter_findings_by_policy(
+    findings: list[dict[str, Any]],
+    policy: Optional[Any] = None,
+) -> list[dict[str, Any]]:
+    """Filter candidate findings using tenant secret_detection and confidence_threshold rules."""
+    if policy is None:
+        return list(findings)
+
+    if isinstance(policy, dict):
+        secret_detection = policy.get("secret_detection", True)
+        conf_threshold = policy.get("confidence_threshold", 0)
+    else:
+        secret_detection = getattr(policy, "secret_detection", True)
+        conf_threshold = getattr(policy, "confidence_threshold", 0)
+
+    filtered: list[dict[str, Any]] = []
+    for f in findings:
+        cwe = str(f.get("cwe_id", "")).upper()
+        title = str(f.get("title", "")).lower()
+        is_secret = cwe == "CWE-798" or "secret" in title or "hardcoded" in title
+        if not secret_detection and is_secret:
+            continue
+        raw_conf = f.get("confidence")
+        if raw_conf is not None and conf_threshold is not None:
+            pct = float(raw_conf) * 100.0 if float(raw_conf) <= 1.0 else float(raw_conf)
+            if pct < float(conf_threshold):
+                continue
+        filtered.append(f)
+    return filtered
+
+
 def decide_verdict(
     risk_score: float,
     findings: Optional[list[dict[str, Any]]] = None,
@@ -350,12 +381,14 @@ def decide_verdict(
             block_hi = policy.get("block_high", True)
             block_med = policy.get("block_medium", False)
             min_sec_score = policy.get("min_security_score", 80)
+            warn_sec_score = policy.get("warn_security_score")
         else:
             block_crit = getattr(policy, "block_critical", True)
             block_sec = getattr(policy, "block_secrets", True)
             block_hi = getattr(policy, "block_high", True)
             block_med = getattr(policy, "block_medium", False)
             min_sec_score = getattr(policy, "min_security_score", 80)
+            warn_sec_score = getattr(policy, "warn_security_score", None)
 
         for f in findings_list:
             sev = str(f.get("severity", "")).lower()
@@ -371,10 +404,15 @@ def decide_verdict(
             if block_med and sev == "medium":
                 return "REQUEST_CHANGES"
 
-        if min_sec_score is not None:
-            security_score = round(max(0.0, 100.0 - (risk_score * 10.0)), 1)
-            if security_score < float(min_sec_score):
-                return "REQUEST_CHANGES"
+        security_score = round(max(0.0, 100.0 - (risk_score * 10.0)), 1)
+        if min_sec_score is not None and security_score < float(min_sec_score):
+            return "REQUEST_CHANGES"
+        if warn_sec_score is not None and float(warn_sec_score) > float(min_sec_score or 0):
+            if security_score < float(warn_sec_score):
+                return "WARNING"
+        if any(str(f.get("severity", "")).lower() == "medium" for f in findings_list):
+            return "WARNING"
+        return "APPROVE"
 
     if risk_score >= 7.00:
         return "REQUEST_CHANGES"

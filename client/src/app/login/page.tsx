@@ -32,8 +32,8 @@ const FEATURES = [
 
 export default function LoginPage() {
   const router = useRouter();
-  const [username, setUsername] = useState("admin");
-  const [email, setEmail] = useState("admin@codesec.ai");
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -188,9 +188,11 @@ export default function LoginPage() {
               </label>
               <input
                 type="text"
+                name="username"
+                autoComplete="username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="e.g. admin or security-lead"
+                placeholder="e.g. your-github-handle"
                 required
                 className="form-input w-full"
                 style={{
@@ -207,6 +209,8 @@ export default function LoginPage() {
               </label>
               <input
                 type="email"
+                name="email"
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="e.g. security@company.com"

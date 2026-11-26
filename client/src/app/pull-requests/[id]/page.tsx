@@ -33,15 +33,19 @@ export default function PRDetailPage() {
   }
 
   const isBlocked = pr.gate_status === "BLOCKED";
+  const isWarning = pr.gate_status === "WARNING";
+  const secScore = Math.max(0, Math.round(100 - pr.security_score * 10));
+
+  const calloutStyle = isBlocked
+    ? { backgroundColor: "var(--crit-bg)", borderColor: "var(--crit-border)" }
+    : isWarning
+    ? { backgroundColor: "var(--high-bg)", borderColor: "var(--high-border)" }
+    : { backgroundColor: "var(--pass-bg)", borderColor: "var(--pass-border)" };
 
   return (
     <div className="space-y">
-      {/* Breadcrumbs */}
       <div className="flex items-center gap-2 text-xs">
-        <Link
-          href="/pull-requests"
-          className="text-muted hover:text-main flex items-center gap-1 font-medium"
-        >
+        <Link href="/pull-requests" className="text-muted hover:text-main flex items-center gap-1 font-medium">
           <ArrowLeftIcon size={14} />
           <span>Pull Requests</span>
         </Link>
@@ -49,20 +53,14 @@ export default function PRDetailPage() {
         <span className="crumb-badge">PR #{pr.pr_number}</span>
       </div>
 
-      {/* Header */}
       <div className="flex-between items-start gap-4 flex-wrap">
         <div>
           <div className="flex items-center gap-3 mb-1.5">
-            <span className="font-mono text-xl font-bold" style={{ color: "var(--accent)" }}>
-              #{pr.pr_number}
-            </span>
+            <span className="font-mono text-xl font-bold" style={{ color: "var(--accent)" }}>#{pr.pr_number}</span>
             <h1 className="page-title mb-0">{pr.title}</h1>
           </div>
           <div className="flex items-center gap-3 text-xs text-muted flex-wrap">
             <span className="crumb-badge">{pr.repository}</span>
-            <span>
-              Author: <strong className="text-main">{pr.author}</strong>
-            </span>
             <span>
               Commit: <code className="text-main font-mono">{pr.commit_sha || "HEAD"}</code>
             </span>
@@ -71,12 +69,7 @@ export default function PRDetailPage() {
         </div>
 
         <a
-          href={
-            pr.pr_url ||
-            (pr.repository.includes("/")
-              ? `https://github.com/${pr.repository}/pull/${pr.pr_number}`
-              : `https://github.com/HitenKatariya/CodeSecAudit/pull/${pr.pr_number}`)
-          }
+          href={pr.pr_url || (pr.repository.includes("/") ? `https://github.com/${pr.repository}/pull/${pr.pr_number}` : "#")}
           target="_blank"
           rel="noreferrer"
         >
@@ -86,7 +79,6 @@ export default function PRDetailPage() {
         </a>
       </div>
 
-      {/* 3 Metric Cards */}
       <div className="stat-grid">
         <div className="metric-card">
           <span className="metric-card-label">Security Gate Verdict</span>
@@ -96,6 +88,8 @@ export default function PRDetailPage() {
           <span className="metric-card-trend text-dim">
             {isBlocked
               ? "Merge blocked in GitHub branch checks."
+              : isWarning
+              ? "Warning raised — review recommended before merge."
               : "All security criteria satisfied."}
           </span>
         </div>
@@ -103,15 +97,9 @@ export default function PRDetailPage() {
         <MetricCard
           label="CVSS Risk Score"
           value={pr.security_score.toFixed(2)}
-          suffix="/ 10.0"
-          severity={
-            pr.security_score >= 7.0
-              ? "critical"
-              : pr.security_score >= 4.0
-              ? "medium"
-              : "passed"
-          }
-          subtitle="Severity-weighted CVSS risk score"
+          suffix={`/ 10.0 (${secScore}/100 pts)`}
+          severity={pr.security_score >= 7.0 ? "critical" : pr.security_score >= 4.0 ? "medium" : "passed"}
+          subtitle="Composite CVSS risk & normalized policy score"
         />
 
         <div className="metric-card">
@@ -128,23 +116,12 @@ export default function PRDetailPage() {
             </span>
           </div>
           <span className="metric-card-trend text-dim">
-            Total {pr.findings.length} detected security items
+            Total {pr.findings.length} detected security item(s)
           </span>
         </div>
       </div>
 
-      {/* Gate Reason Callout: Always clear why PR was blocked */}
-      <div
-        className="p-4 rounded-lg border text-xs"
-        style={{
-          backgroundColor: isBlocked
-            ? "var(--crit-bg)"
-            : "var(--pass-bg)",
-          borderColor: isBlocked
-            ? "var(--crit-border)"
-            : "var(--pass-border)",
-        }}
-      >
+      <div className="p-4 rounded-lg border text-xs" style={calloutStyle}>
         <span className="font-bold uppercase tracking-wider block mb-1 text-main">
           Security Gate Evaluation
         </span>
@@ -154,7 +131,6 @@ export default function PRDetailPage() {
         </p>
       </div>
 
-      {/* Findings List */}
       <div>
         <h2 className="text-sm font-bold text-main mb-3">
           Vulnerabilities in this PR ({pr.findings.length})

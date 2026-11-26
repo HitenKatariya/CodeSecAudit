@@ -14,7 +14,7 @@ export function RecentPRsTable({ prs }: { prs: PullRequest[] }) {
       header: "Pull Request",
       render: (pr) => (
         <Link
-          href={`/pull-requests/${pr.pr_number}`}
+          href={`/pull-requests/${pr.id}`}
           className="font-medium hover:underline flex items-center gap-1.5"
           style={{ color: "var(--text-main)" }}
         >
@@ -35,11 +35,11 @@ export function RecentPRsTable({ prs }: { prs: PullRequest[] }) {
       ),
     },
     {
-      key: "author",
-      header: "Author",
+      key: "commit_sha",
+      header: "Commit",
       render: (pr) => (
-        <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-          {pr.author}
+        <span className="font-mono text-xs" style={{ color: "var(--text-dim)" }}>
+          {pr.commit_sha || "HEAD"}
         </span>
       ),
     },
@@ -77,7 +77,12 @@ export function RecentPRsTable({ prs }: { prs: PullRequest[] }) {
               <StatusDot color="var(--high-color)" /> {pr.findings_summary.high} High
             </span>
           )}
-          {pr.findings_summary.critical === 0 && pr.findings_summary.high === 0 && (
+          {pr.findings_summary.medium > 0 && (
+            <span style={{ color: "var(--med-color)" }} className="flex items-center">
+              <StatusDot color="var(--med-color)" /> {pr.findings_summary.medium} Med
+            </span>
+          )}
+          {pr.findings_summary.critical === 0 && pr.findings_summary.high === 0 && pr.findings_summary.medium === 0 && (
             <span style={{ color: "var(--pass-color)" }} className="flex items-center">
               <StatusDot color="var(--pass-color)" /> Clean
             </span>

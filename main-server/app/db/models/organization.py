@@ -1,8 +1,9 @@
 """Organization and Membership database models."""
 
 import uuid
+from typing import Optional
 from datetime import datetime
-from sqlalchemy import DateTime, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base, TimestampMixin
 
@@ -16,6 +17,7 @@ class Organization(Base, TimestampMixin):
     github_org_id: Mapped[str] = mapped_column(String(64), nullable=True, index=True)
     plan: Mapped[str] = mapped_column(String(64), default="free", nullable=False)
     monthly_pr_quota: Mapped[int] = mapped_column(Integer, default=30, nullable=False)
+    policy_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
 
 class Membership(Base, TimestampMixin):

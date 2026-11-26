@@ -97,6 +97,17 @@ export async function deleteAccount(): Promise<boolean> {
 }
 
 
+export async function syncGitHubReviews(): Promise<{ synced: number; skipped: number; repositories: number } | null> {
+  try {
+    const res = await fetch("/api/reviews/sync-github", {
+      method: "POST",
+      credentials: "include",
+    });
+    if (res.ok) return await res.json();
+  } catch {}
+  return null;
+}
+
 export async function fetchReviews(): Promise<ReviewRecord[]> {
   try {
     const res = await fetch("/api/reviews", { credentials: "include" });
@@ -128,12 +139,12 @@ export async function fetchPullRequests(): Promise<PullRequest[]> {
       const high = rFindings.filter((f) => f.severity === "high").length;
       const med = rFindings.filter((f) => f.severity === "medium").length;
       const low = rFindings.filter((f) => f.severity === "low").length;
-      const repoFullName = r.repo_full_name || r.repository_id || "HitenKatariya/CodeSecAudit";
+      const repoFullName = r.repo_full_name || r.repository_id || "Unknown repository";
       const prUrl = r.pr_url || (repoFullName.includes("/") ? `https://github.com/${repoFullName}/pull/${r.pr_number}` : undefined);
       return {
         id: r.id,
         pr_number: r.pr_number || 1,
-        title: `Security Audit PR #${r.pr_number || 1}`,
+        title: r.pr_title || `Security Audit PR #${r.pr_number || 1}`,
         repository: repoFullName,
         repo_full_name: repoFullName,
         pr_url: prUrl,
@@ -159,12 +170,12 @@ export async function fetchPullRequestById(id: string): Promise<PullRequest | nu
     const high = review.findings.filter((f) => f.severity === "high").length;
     const med = review.findings.filter((f) => f.severity === "medium").length;
     const low = review.findings.filter((f) => f.severity === "low").length;
-    const repoFullName = review.repo_full_name || review.repository_id || "HitenKatariya/CodeSecAudit";
+    const repoFullName = review.repo_full_name || review.repository_id || "Unknown repository";
     const prUrl = review.pr_url || (repoFullName.includes("/") ? `https://github.com/${repoFullName}/pull/${review.pr_number}` : undefined);
     return {
       id: review.id,
       pr_number: review.pr_number || 1,
-      title: `Security Audit PR #${review.pr_number || 1}`,
+      title: review.pr_title || `Security Audit PR #${review.pr_number || 1}`,
       repository: repoFullName,
       repo_full_name: repoFullName,
       pr_url: prUrl,
@@ -250,6 +261,7 @@ export async function fetchSecurityPolicy(): Promise<SecurityPolicy> {
     block_high: true,
     block_medium: false,
     min_security_score: 80,
+    warn_security_score: 90,
     confidence_threshold: 70,
     secret_detection: true,
   };

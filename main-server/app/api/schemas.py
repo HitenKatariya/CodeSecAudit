@@ -61,6 +61,7 @@ class ReviewDetailResponse(BaseModel):
     repository_id: str
     repo_full_name: Optional[str] = None
     pr_url: Optional[str] = None
+    pr_title: Optional[str] = None
     pr_number: int
     commit_sha: str
     risk_score: float = 0.0
@@ -108,6 +109,7 @@ class SecurityPolicySchema(BaseModel):
     block_high: bool = True
     block_medium: bool = False
     min_security_score: int = 80
+    warn_security_score: Optional[int] = None
     confidence_threshold: int = 70
     secret_detection: bool = True
 

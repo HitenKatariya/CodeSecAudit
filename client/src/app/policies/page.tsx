@@ -11,22 +11,31 @@ export default function PoliciesPage() {
   const [policy, setPolicy] = useState<SecurityPolicy | null>(null);
   const [prs, setPrs] = useState<PullRequest[]>([]);
   const [saving, setSaving] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ ok: boolean; msg: string } | null>(null);
 
   useEffect(() => {
-    fetchSecurityPolicy().then((p) => setPolicy(p));
+    fetchSecurityPolicy().then((p) =>
+      setPolicy({ ...p, warn_security_score: p.warn_security_score ?? Math.min(100, p.min_security_score + 10) })
+    );
     fetchPullRequests().then(setPrs);
   }, []);
 
   const handleSave = async () => {
     if (!policy) return;
     setSaving(true);
-    await saveSecurityPolicy(policy);
+    const ok = await saveSecurityPolicy(policy);
+    if (ok) {
+      const refreshed = await fetchPullRequests();
+      setPrs(refreshed);
+      setToast({
+        ok: true,
+        msg: `Policy saved (${policy.min_security_score}/100 block gate) and synchronized across ${refreshed.length} PR(s).`,
+      });
+    } else {
+      setToast({ ok: false, msg: "Failed to save policy. Please ensure you are signed in and try again." });
+    }
     setSaving(false);
-    setToastMessage(
-      "Security policy successfully updated and synchronized with GitHub check runs."
-    );
-    setTimeout(() => setToastMessage(null), 4000);
+    setTimeout(() => setToast(null), 5000);
   };
 
   if (!policy) {
@@ -42,69 +51,49 @@ export default function PoliciesPage() {
     <div className="space-y">
       <PageHeader
         title="Security Policies"
-        subtitle="Define automated guardrails and blocking criteria for CI/CD Pull Request gates."
+        subtitle="Define dynamic score threshold bars and automated blocking criteria for CI/CD Pull Request gates."
       />
 
-      {toastMessage && (
+      {toast && (
         <div
           className="p-3 rounded-lg border text-xs flex-between"
           style={{
-            backgroundColor: "var(--pass-bg)",
-            borderColor: "var(--pass-border)",
-            color: "var(--pass-color)",
+            backgroundColor: toast.ok ? "var(--pass-bg)" : "var(--crit-bg)",
+            borderColor: toast.ok ? "var(--pass-border)" : "var(--crit-border)",
+            color: toast.ok ? "var(--pass-color)" : "var(--crit-color)",
           }}
         >
-          <span>✓ {toastMessage}</span>
-          <button
-            onClick={() => setToastMessage(null)}
-            className="text-muted hover:text-main"
-          >
-            ✕
-          </button>
+          <span>{toast.ok ? "✓" : "!"} {toast.msg}</span>
+          <button onClick={() => setToast(null)} className="text-muted hover:text-main">✕</button>
         </div>
       )}
 
-      {/* Active Gate status banner */}
       <div
         className="p-4 rounded-xl border flex items-center justify-between"
-        style={{
-          backgroundColor: "var(--bg-surface)",
-          borderColor: "var(--border-subtle)",
-        }}
+        style={{ backgroundColor: "var(--bg-surface)", borderColor: "var(--border-subtle)" }}
       >
         <div className="flex items-center gap-3">
           <div
             className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
-            style={{
-              backgroundColor: "rgba(56, 189, 248, 0.15)",
-              color: "var(--accent)",
-            }}
+            style={{ backgroundColor: "rgba(56, 189, 248, 0.15)", color: "var(--accent)" }}
           >
             <ShieldCheckIcon size={20} />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-main">
-                Active Enforcement Gate: Strict Mode
-              </span>
-              <span className="badge badge-passed">LIVE IN PRODUCTION</span>
+              <span className="text-sm font-semibold text-main">Active Enforcement Gate</span>
+              <span className="badge badge-passed">LIVE THRESHOLDS</span>
             </div>
             <p className="text-xs text-muted mt-0.5">
-              Blocking merge on Critical &amp; High vulnerabilities, hardcoded
-              secrets, and scores &lt; {policy.min_security_score}.
+              Blocks PRs scoring &lt; {policy.min_security_score}/100 &middot; warns &lt;{" "}
+              {policy.warn_security_score ?? policy.min_security_score}/100 &middot; confidence &ge;{" "}
+              {policy.confidence_threshold}%.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Policy Configuration Form */}
-      <PolicyForm
-        policy={policy}
-        onChange={setPolicy}
-        onSave={handleSave}
-        saving={saving}
-        recentPrs={prs}
-      />
+      <PolicyForm policy={policy} onChange={setPolicy} onSave={handleSave} saving={saving} recentPrs={prs} />
     </div>
   );
 }

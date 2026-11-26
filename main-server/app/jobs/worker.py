@@ -8,6 +8,7 @@ from app.core.config import get_settings
 from app.core.logging import setup_logger
 from app.core.redis import get_redis_service
 from app.db.models.audit import AuditEvent
+from app.db.models.organization import Organization
 from app.db.models.review import Finding, Review, ReviewJob
 from app.db.session import get_session_factory
 from app.jobs.queue import dequeue_review_job
@@ -16,7 +17,12 @@ from app.reviews.engine import scan_diff_lines, scan_source_code
 from app.reviews.pr_agent_client import AI_FINDING_CWE, review_diff_with_pr_agent
 from app.reviews.rag_client import query_rag_guidance
 from app.reviews.report_formatter import format_pr_comment
-from app.reviews.risk import calculate_risk_score, decide_verdict, get_suggested_fix
+from app.reviews.risk import (
+    calculate_risk_score,
+    decide_verdict,
+    filter_findings_by_policy,
+    get_suggested_fix,
+)
 from app.security.github_app import fetch_pull_request_diff, post_pr_comment
 
 logger = logging.getLogger("main_server")
@@ -88,8 +94,17 @@ async def process_single_job(job_data: dict) -> None:
             if raw_policy:
                 policy = json.loads(raw_policy)
         except Exception as e:
-            logger.warning(f"Could not load policy for org {org_id}: {e}")
+            logger.warning(f"Could not load policy from Redis for org {org_id}: {e}")
 
+        if policy is None:
+            try:
+                org_obj = (await db.execute(select(Organization).where(Organization.id == org_id))).scalar_one_or_none()
+                if org_obj and org_obj.policy_json:
+                    policy = json.loads(org_obj.policy_json)
+            except Exception as e:
+                logger.warning(f"Could not load policy from Postgres for org {org_id}: {e}")
+
+        findings_raw = filter_findings_by_policy(findings_raw, policy)
         risk_score = calculate_risk_score(findings_raw)
         verdict = decide_verdict(risk_score, findings=findings_raw, policy=policy)
 

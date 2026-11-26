@@ -21,7 +21,7 @@ async def create_user_session(response: Response, user_id: str, org_id: str) -> 
     redis_service = get_redis_service(settings.redis_url)
     await redis_service.set_session(session_id, session_data, ttl_seconds=86400 * 7)
 
-    is_prod = settings.app_env == "production"
+    is_prod = settings.app_env == "production" or settings.next_public_app_url.startswith("https://")
     response.set_cookie(
         key=SESSION_COOKIE_NAME,
         value=session_id,

@@ -84,6 +84,7 @@ export interface SecurityPolicy {
   block_high: boolean;
   block_medium: boolean;
   min_security_score: number;
+  warn_security_score?: number | null;
   confidence_threshold: number;
   secret_detection: boolean;
 }
@@ -127,6 +128,7 @@ export interface ReviewRecord {
   repository_id: string;
   repo_full_name?: string;
   pr_url?: string;
+  pr_title?: string;
   pr_number: number;
   commit_sha: string;
   risk_score: number;

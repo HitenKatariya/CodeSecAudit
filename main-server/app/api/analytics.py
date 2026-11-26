@@ -61,15 +61,15 @@ async def get_analytics_trends(
     # 3. Organization security score
     if reviews:
         avg_risk = sum(r.risk_score for r in reviews) / total_reviews
-        org_security_score = max(0, min(100, int(100 - avg_risk)))
+        org_security_score = max(0, min(100, int(100 - (avg_risk * 10.0))))
     else:
         org_security_score = 100
 
     # 4. Monthly score progression from real reviews
-    monthly_scores: dict[str, list[int]] = {}
+    monthly_scores: dict[str, list[float]] = {}
     for r in reviews:
         month_label = r.created_at.strftime("%b")
-        monthly_scores.setdefault(month_label, []).append(max(0, 100 - r.risk_score))
+        monthly_scores.setdefault(month_label, []).append(max(0.0, 100.0 - (r.risk_score * 10.0)))
 
     progression: list[ScoreProgressionItem] = []
     if monthly_scores:

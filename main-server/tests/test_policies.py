@@ -1,7 +1,7 @@
 """Unit tests for tenant security policy enforcement."""
 
 from app.api.schemas import SecurityPolicySchema
-from app.reviews.risk import decide_verdict
+from app.reviews.risk import decide_verdict, filter_findings_by_policy
 
 
 def test_default_policy_enforcement():
@@ -37,6 +37,26 @@ def test_block_medium_policy():
     # When block_medium is enabled -> returns REQUEST_CHANGES
     policy_strict = SecurityPolicySchema(block_medium=True, min_security_score=50)
     assert decide_verdict(3.0, findings=findings, policy=policy_strict) == "REQUEST_CHANGES"
+
+
+def test_dynamic_policy_filters_and_warning_threshold():
+    policy = SecurityPolicySchema(
+        block_critical=False, block_high=False, block_secrets=False,
+        block_medium=False, min_security_score=70, warn_security_score=90,
+        confidence_threshold=80, secret_detection=False,
+    )
+    findings = [
+        {"cwe_id": "CWE-798", "severity": "low", "title": "Hardcoded secret", "confidence": 0.95},
+        {"cwe_id": "CWE-79", "severity": "medium", "title": "Reflected XSS", "confidence": 0.95},
+        {"cwe_id": "CWE-20", "severity": "low", "title": "Low confidence noise", "confidence": 0.4},
+    ]
+    active = filter_findings_by_policy(findings, policy)
+    assert [f["cwe_id"] for f in active] == ["CWE-79"]
+
+    # Score 85 sits in the dynamic warning band 70..90.
+    assert decide_verdict(1.5, findings=active, policy=policy) == "WARNING"
+    policy.warn_security_score = 70
+    assert decide_verdict(1.5, findings=[], policy=policy) == "APPROVE"
 
 
 def test_min_security_score_threshold():
