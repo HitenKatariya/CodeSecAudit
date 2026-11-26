@@ -32,6 +32,7 @@ from app.security.sessions import (
     create_user_session,
     destroy_user_session,
 )
+from app.reviews.github_sync import discover_org_installations
 from app.security.org_sync import reconcile_user_organization, resolve_org_for_github_account
 from app.security.tenant import TenantContext, get_tenant_context
 
@@ -188,6 +189,11 @@ async def github_auth_callback(
                     )
         except Exception as e:
             logger.warning(f"Could not link installation or sync repos: {e}")
+    elif org_id and user:
+        try:
+            await discover_org_installations(db, org_id, hint_logins=[user.username])
+        except Exception as e:
+            logger.warning(f"Could not auto-discover installation for {user.username}: {e}")
 
     # 6. Record login / install audit event
     client_ip = request.client.host if request.client else "unknown"
@@ -287,6 +293,12 @@ async def login(
         org_id = org.id
         org_title = org.name
         org_role = membership.role
+
+    try:
+        await reconcile_user_organization(db, user, org_id)
+        await discover_org_installations(db, org_id, hint_logins=[user.username])
+    except Exception as e:
+        logger.warning(f"Post-login org/install sync skipped for {username}: {e}")
 
     # Record login audit event
     client_ip = request.client.host if request.client else "unknown"
@@ -397,6 +409,14 @@ async def get_me(
     settings = get_settings()
     inst_stmt = select(GitHubInstallation).where(GitHubInstallation.organization_id == tenant.organization.id)
     has_install = (await db.execute(inst_stmt)).first() is not None
+    if not has_install:
+        try:
+            found = await discover_org_installations(db, tenant.organization.id, hint_logins=[tenant.user.username])
+            if found:
+                await db.commit()
+                has_install = True
+        except Exception:
+            await db.rollback()
 
     return UserMeResponse(
         id=tenant.user.id,

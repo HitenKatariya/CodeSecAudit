@@ -14,6 +14,7 @@ from app.api.schemas import (
 from app.db.models.github import Repository
 from app.db.models.review import Finding, Review
 from app.db.session import get_db
+from app.reviews.github_sync import ensure_org_history_synced
 from app.security.tenant import TenantContext, get_tenant_context
 
 router = APIRouter(prefix="/v1", tags=["Analytics & Reports"])
@@ -37,6 +38,7 @@ async def get_analytics_trends(
     db: AsyncSession = Depends(get_db),
 ):
     org_id = tenant.organization.id
+    await ensure_org_history_synced(db, org_id)
 
     # 1. Fetch all reviews for this organization
     rev_stmt = select(Review).where(Review.organization_id == org_id).order_by(Review.created_at.asc())
@@ -126,6 +128,7 @@ async def get_report_summary(
     db: AsyncSession = Depends(get_db),
 ):
     org_id = tenant.organization.id
+    await ensure_org_history_synced(db, org_id)
 
     # Count distinct repos
     repo_count_stmt = select(func.count(Repository.id)).where(Repository.organization_id == org_id)

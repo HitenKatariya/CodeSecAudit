@@ -153,3 +153,20 @@ async def uninstall_github_app(installation_id: str) -> bool:
         logger.warning(f"Error uninstalling GitHub App installation {installation_id}: {e}")
     return False
 
+
+async def list_app_installations() -> list[dict]:
+    """List all GitHub App installations using the App JWT (gracefully returns [] if unconfigured)."""
+    try:
+        app_jwt = _build_app_jwt()
+    except Exception:
+        return []
+    headers = {"Authorization": f"Bearer {app_jwt}", "Accept": "application/vnd.github+json"}
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as http:
+            resp = await http.get(f"{GITHUB_API_BASE}/app/installations?per_page=100", headers=headers)
+            if resp.status_code == 200 and isinstance(resp.json(), list):
+                return resp.json()
+    except Exception as e:
+        logger.warning(f"Error listing GitHub App installations: {e}")
+    return []
+

@@ -59,3 +59,65 @@ def test_parse_comment_falls_back_to_head_sha() -> None:
     result = parse_bot_comment("No structured payload here", "0123456789abcdef")
     assert result["commit_sha"] == "0123456789abcdef"
     assert result["verdict"] == "APPROVE"
+
+
+def test_parse_markdown_verdict_header_ignores_body_words() -> None:
+    body = (
+        "> **Verdict:** ✅ **APPROVE** | **CVSS Security Risk Score:** `0.00 / 10.0` "
+        "| **Target Commit:** `abc1234`\n\n"
+        "Note: Avoid WARNING triggers or REQUEST CHANGES by sanitizing input."
+    )
+    result = parse_bot_comment(body, "abc1234")
+    assert result["verdict"] == "APPROVE"
+
+
+async def test_sync_repo_pr_reviews_persists_findings_with_confidence(monkeypatch) -> None:
+    import uuid
+    from sqlalchemy import select
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+    import app.reviews.github_sync as gh_sync
+    from app.db.base import Base
+    from app.db.models.github import Repository
+    from app.db.models.organization import Organization
+    from app.db.models.review import Finding, Review
+
+    engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    factory = async_sessionmaker(bind=engine, expire_on_commit=False)
+
+    body = _payload_comment("REQUEST_CHANGES", 9.4, [{
+        "cwe_id": "CWE-89",
+        "severity": "critical",
+        "title": "SQL Injection",
+        "file_path": "app/bad.py",
+        "line_number": 12,
+        "confidence": 0.96,
+    }])
+
+    async def fake_fetch(repo_name, headers):
+        return [(
+            {"number": 21, "title": "feat: severe vuln PR", "head": {"sha": "deadbeef1234"}},
+            {"user": {"login": "codesecaudit-ai[bot]"}, "body": body, "created_at": "2026-11-26T18:00:00Z"},
+        )]
+
+    monkeypatch.setattr(gh_sync, "_fetch_pr_bot_comments", fake_fetch)
+
+    async with factory() as db:
+        org = Organization(id=str(uuid.uuid4()), name="Test Org", slug="test-org")
+        repo = Repository(id=str(uuid.uuid4()), organization_id=org.id, github_repo_id="r1", full_name="OMCHOKSI108/CodeSecurityAuditAgent", is_private=False)
+        db.add_all([org, repo])
+        await db.commit()
+
+        res = await gh_sync.sync_repo_pr_reviews(db, org.id, repo)
+        await db.commit()
+        assert res == {"synced": 1, "skipped": 0}
+
+        rev = (await db.execute(select(Review).where(Review.repository_id == repo.id))).scalar_one()
+        assert rev.verdict == "REQUEST_CHANGES"
+        assert "feat: severe vuln PR" in rev.summary
+        fin = (await db.execute(select(Finding).where(Finding.review_id == rev.id))).scalar_one()
+        assert fin.cwe_id == "CWE-89"
+
+    await engine.dispose()
+

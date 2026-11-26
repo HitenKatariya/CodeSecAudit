@@ -25,10 +25,11 @@ export function simulateGate(pr: PullRequest, policy: SecurityPolicy): GateStatu
   const crit = activeFindings.filter((f) => f.severity === "critical").length;
   const hi = activeFindings.filter((f) => f.severity === "high").length;
   const med = activeFindings.filter((f) => f.severity === "medium").length;
-  const hasSecret = activeFindings.some(
-    (f: any) => f.cwe_id === "CWE-798" || (f.title || "").toLowerCase().includes("secret")
-  );
-  const effectiveRisk = activeFindings.length === 0 ? 0 : pr.security_score || 0;
+  const hasSecret = activeFindings.some((f: any) => {
+    const title = (f.title || "").toLowerCase();
+    return f.cwe_id === "CWE-798" || title.includes("secret") || title.includes("token") || title.includes("key");
+  });
+  const effectiveRisk = (pr.findings || []).length > 0 && activeFindings.length === 0 ? 0 : pr.security_score || 0;
   const score = Math.max(0, 100 - effectiveRisk * 10);
 
   if (

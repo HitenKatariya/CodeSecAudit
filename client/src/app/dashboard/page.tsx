@@ -31,11 +31,15 @@ export default function DashboardPage() {
     }
 
     Promise.all([fetchRepositories(), fetchPullRequests(), fetchMe()])
-      .then(([r, p, me]) => {
-        setRepos(r);
+      .then(async ([r, p, me]) => {
+        let finalRepos = r;
+        if (p.length > 0 && r.length === 0) {
+          finalRepos = await fetchRepositories();
+        }
+        setRepos(finalRepos);
         setPrs(p);
         setUser(me);
-        if (me?.is_installed || r.length > 0) {
+        if (me?.is_installed || finalRepos.length > 0) {
           setIsInstalled(true);
           if (typeof window !== "undefined") {
             localStorage.setItem("codesec_app_installed", "true");

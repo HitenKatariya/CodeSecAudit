@@ -64,7 +64,7 @@ export default function PoliciesPage() {
           }}
         >
           <span>{toast.ok ? "✓" : "!"} {toast.msg}</span>
-          <button onClick={() => setToast(null)} className="text-muted hover:text-main">✕</button>
+          <button onClick={() => setToast(null)} className="btn-dismiss" aria-label="Dismiss notification">✕</button>
         </div>
       )}
 

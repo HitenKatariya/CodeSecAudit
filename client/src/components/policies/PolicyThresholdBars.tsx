@@ -8,7 +8,8 @@ interface Props {
 }
 
 function sliderTrack(val: number, min: number, max: number, activeColor: string): string {
-  const pct = Math.max(0, Math.min(100, ((val - min) / (max - min)) * 100));
+  const span = max - min;
+  const pct = span <= 0 ? 100 : Math.max(0, Math.min(100, ((val - min) / span) * 100));
   return `linear-gradient(to right, ${activeColor} 0%, ${activeColor} ${pct}%, var(--border-subtle, #273244) ${pct}%, var(--border-subtle, #273244) 100%)`;
 }
 
@@ -74,7 +75,7 @@ export function PolicyThresholdBars({ policy, onUpdate }: Props) {
                 warn_security_score: Math.max(nextMin, warnScore),
               });
             }}
-            className="w-full h-2 rounded-lg appearance-none cursor-pointer"
+            className="policy-range w-full h-2 rounded-lg appearance-none cursor-pointer"
             style={{ background: sliderTrack(minScore, 10, 95, "var(--crit-color)"), accentColor: "var(--crit-color)" }}
           />
           <span className="text-[11px] text-dim block mt-1">
@@ -96,7 +97,7 @@ export function PolicyThresholdBars({ policy, onUpdate }: Props) {
             step="5"
             value={warnScore}
             onChange={(e) => onUpdate({ warn_security_score: Number(e.target.value) })}
-            className="w-full h-2 rounded-lg appearance-none cursor-pointer"
+            className="policy-range w-full h-2 rounded-lg appearance-none cursor-pointer"
             style={{ background: sliderTrack(warnScore, minScore, 100, "var(--med-color)"), accentColor: "var(--med-color)" }}
           />
           <span className="text-[11px] text-dim block mt-1">
@@ -116,7 +117,7 @@ export function PolicyThresholdBars({ policy, onUpdate }: Props) {
             step="1"
             value={conf}
             onChange={(e) => onUpdate({ confidence_threshold: Number(e.target.value) })}
-            className="w-full h-2 rounded-lg appearance-none cursor-pointer"
+            className="policy-range w-full h-2 rounded-lg appearance-none cursor-pointer"
             style={{ background: sliderTrack(conf, 60, 99, "var(--accent)"), accentColor: "var(--accent)" }}
           />
           <span className="text-[11px] text-dim block mt-1">

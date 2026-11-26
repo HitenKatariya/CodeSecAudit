@@ -10,7 +10,7 @@ from app.db.models.github import Repository
 from app.db.models.review import Finding, Review, ReviewJob
 from app.db.session import get_db
 from app.jobs.queue import enqueue_review_job
-from app.reviews.github_sync import sync_org_github_reviews
+from app.reviews.github_sync import ensure_org_history_synced, sync_org_github_reviews
 from app.security.org_sync import reconcile_user_organization
 from app.security.tenant import TenantContext, get_tenant_context
 
@@ -68,7 +68,7 @@ async def sync_github_reviews(
     res = await sync_org_github_reviews(db, tenant.organization.id)
     try:
         redis = await get_redis_service(get_settings().redis_url).get_async()
-        await redis.setex(f"gh_history_synced_v2:{tenant.organization.id}", 3600, "1")
+        await redis.setex(f"gh_history_synced_v3:{tenant.organization.id}", 3600, "1")
     except Exception:
         pass
     return res
@@ -87,14 +87,7 @@ async def list_reviews(
     except Exception:
         await db.rollback()
 
-    try:
-        redis = await get_redis_service(get_settings().redis_url).get_async()
-        sync_key = f"gh_history_synced_v2:{tenant.organization.id}"
-        if not await redis.get(sync_key):
-            await sync_org_github_reviews(db, tenant.organization.id)
-            await redis.setex(sync_key, 3600, "1")
-    except Exception:
-        await db.rollback()
+    await ensure_org_history_synced(db, tenant.organization.id)
 
     stmt = (
         select(Review)

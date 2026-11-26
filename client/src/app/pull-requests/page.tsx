@@ -145,7 +145,7 @@ export default function PullRequestsPage() {
       {syncNotice && (
         <div className="p-3 rounded-lg border text-xs flex-between" style={{ backgroundColor: "var(--bg-surface-elevated)", borderColor: "var(--border-subtle)", color: "var(--text-main)" }}>
           <span>{syncNotice}</span>
-          <button onClick={() => setSyncNotice(null)} className="text-muted hover:text-main">✕</button>
+          <button onClick={() => setSyncNotice(null)} className="btn-dismiss" aria-label="Dismiss notification">✕</button>
         </div>
       )}
       <div className="filter-bar flex-between">
