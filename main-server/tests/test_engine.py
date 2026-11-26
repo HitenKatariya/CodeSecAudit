@@ -66,3 +66,21 @@ def test_cvss_risk_score_calculation():
     low_score = calculate_risk_score(low_findings)
     assert low_score == 2.54
     assert decide_verdict(low_score) == "APPROVE"
+
+
+def test_detect_medium_xss_and_csrf_warning_verdict():
+    xss = scan_source_code("previewEl.innerHTML = userComment;", file_path="banner.ts")
+    assert len(xss) == 1
+    assert xss[0]["cwe_id"] == "CWE-79"
+    assert xss[0]["severity"] == "medium"
+    xss_score = calculate_risk_score(xss)
+    assert xss_score == 6.10
+    assert decide_verdict(xss_score, findings=xss) == "WARNING"
+
+    csrf = scan_source_code("@csrf_exempt\ndef update_profile():\n    return True", file_path="views.py")
+    assert len(csrf) == 1
+    assert csrf[0]["cwe_id"] == "CWE-352"
+    assert csrf[0]["severity"] == "medium"
+    csrf_score = calculate_risk_score(csrf)
+    assert csrf_score == 6.50
+    assert decide_verdict(csrf_score, findings=csrf) == "WARNING"

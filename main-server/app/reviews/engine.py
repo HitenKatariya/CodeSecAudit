@@ -83,6 +83,29 @@ RULES: list[dict[str, Any]] = [
         ],
         "explanation": "Making HTTP requests to URLs constructed from user input allows SSRF attacks.",
     },
+    {
+        "id": "xss-sink",
+        "title": "Cross-Site Scripting (XSS) via Unsanitized DOM Sink",
+        "cwe_id": "CWE-79",
+        "severity": "medium",
+        "patterns": [
+            r"\.innerHTML\s*=",
+            r"\bdocument\.write\s*\(",
+            r"dangerouslySetInnerHTML\s*[:=]",
+        ],
+        "explanation": "Injecting unescaped dynamic content into DOM sinks enables Cross-Site Scripting (XSS).",
+    },
+    {
+        "id": "csrf-exempt",
+        "title": "Cross-Site Request Forgery (CSRF) Protection Disabled",
+        "cwe_id": "CWE-352",
+        "severity": "medium",
+        "patterns": [
+            r"@csrf_exempt\b",
+            r"\bcsrf\s*[:=]\s*False\b",
+        ],
+        "explanation": "Disabling CSRF verification exposes state-changing endpoints to cross-origin request forgery.",
+    },
 ]
 
 MAX_FINDINGS_PER_RULE = 3

@@ -26,6 +26,8 @@ CWE_METADATA = {
     "CWE-328": {"name": "Weak Hash (CWE-328)", "color": "var(--low-color)", "barBg": "rgba(56, 189, 248, 0.8)"},
     "CWE-22": {"name": "Path Traversal (CWE-22)", "color": "var(--high-color)", "barBg": "rgba(249, 115, 22, 0.8)"},
     "CWE-918": {"name": "SSRF (CWE-918)", "color": "var(--low-color)", "barBg": "rgba(56, 189, 248, 0.8)"},
+    "CWE-79": {"name": "XSS (CWE-79)", "color": "var(--med-color)", "barBg": "rgba(234, 179, 8, 0.8)"},
+    "CWE-352": {"name": "CSRF (CWE-352)", "color": "var(--med-color)", "barBg": "rgba(234, 179, 8, 0.8)"},
 }
 
 
