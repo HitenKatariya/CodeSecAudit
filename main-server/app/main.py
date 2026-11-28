@@ -1,9 +1,12 @@
 """Main Server application entrypoint."""
 
 import asyncio
+import logging
+import traceback
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from app.api.analytics import router as analytics_router
 from app.api.auth import router as auth_router
 from app.api.findings import router as findings_router
@@ -37,6 +40,20 @@ async def lifespan(app: FastAPI):
 
 
 settings = get_settings()
+logger = logging.getLogger("main_server")
+
+
+async def log_unhandled_exception(request: Request, exc: Exception) -> JSONResponse:
+    """Keep the public response generic while recording the full traceback for operators."""
+    logger.error(
+        "Unhandled exception on %s %s: %s\n%s",
+        request.method,
+        request.url.path,
+        exc,
+        traceback.format_exc(),
+    )
+    return JSONResponse(status_code=500, content={"detail": "Internal Server Error"})
+
 
 app = FastAPI(
     title="CodeSecAudit Main Server",
@@ -44,6 +61,7 @@ app = FastAPI(
     description="Core security, auth, GitHub integration, and review orchestration service",
     lifespan=lifespan,
 )
+app.add_exception_handler(Exception, log_unhandled_exception)
 
 # CORS configuration
 app.add_middleware(
