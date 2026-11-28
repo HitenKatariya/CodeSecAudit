@@ -298,6 +298,9 @@ async def login(
         await reconcile_user_organization(db, user, org_id)
         await discover_org_installations(db, org_id, hint_logins=[user.username])
     except Exception as e:
+        # A failed reconcile/discovery can leave the session in a pending-rollback
+        # state; clear it so the rest of the login flow still commits cleanly.
+        await db.rollback()
         logger.warning(f"Post-login org/install sync skipped for {username}: {e}")
 
     # Record login audit event

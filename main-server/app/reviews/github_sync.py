@@ -69,7 +69,7 @@ async def sync_repo_pr_reviews(
     headers = {"Accept": "application/vnd.github+json", **({"Authorization": f"Bearer {token}"} if token else {})}
     pr_comments = await _fetch_pr_bot_comments(repo.full_name, headers)
     if not pr_comments:
-        return {"synced": 0, "skipped": 0}
+        return {"synced": 0, "skipped": 0, "repaired": 0}
 
     existing_rows = (await db.execute(select(Review).where(Review.repository_id == repo.id))).scalars().all()
     existing_by_pr_sha = {(r.pr_number, (r.commit_sha or "")[:12]): r for r in existing_rows}

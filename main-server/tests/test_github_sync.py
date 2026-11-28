@@ -177,3 +177,31 @@ async def test_sync_repo_pr_reviews_persists_findings_with_confidence(monkeypatc
 
     await engine.dispose()
 
+
+async def test_sync_repo_pr_reviews_without_bot_comments_returns_full_counts(monkeypatch) -> None:
+    """Repos with no bot comments must not break the org-level aggregator."""
+    import uuid
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+    import app.reviews.github_sync as gh_sync
+    from app.db.base import Base
+    from app.db.models.github import Repository
+    from app.db.models.organization import Organization
+
+    engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    factory = async_sessionmaker(bind=engine, expire_on_commit=False)
+    async def no_comments(*_):
+        return []
+
+    monkeypatch.setattr(gh_sync, "_fetch_pr_bot_comments", no_comments)
+
+    async with factory() as db:
+        org = Organization(id=str(uuid.uuid4()), name="Test Org", slug="test-org")
+        repo = Repository(id=str(uuid.uuid4()), organization_id=org.id, github_repo_id="r2", full_name="empty/repo", is_private=False)
+        db.add_all([org, repo])
+        await db.commit()
+        assert await gh_sync.sync_repo_pr_reviews(db, org.id, repo) == {"synced": 0, "skipped": 0, "repaired": 0}
+
+    await engine.dispose()
+
